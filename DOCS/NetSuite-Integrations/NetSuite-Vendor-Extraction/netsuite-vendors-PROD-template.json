@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "extractedAt": "2025-01-15T00:00:00.000Z",
+    "source": "NetSuite Production Account - TEMPLATE",
+    "accountId": "11516011",
+    "totalVendors": 0,
+    "extractionMethod": "Manual/Template - Production RESTlet Required",
+    "version": "1.0.0",
+    "status": "TEMPLATE - REQUIRES PRODUCTION EXTRACTION",
+    "notes": "This is a template file. The actual vendor data needs to be extracted from NetSuite production using the VendorListRestlet."
+  },
+  "extractionInstructions": {
+    "method": "RESTlet Deployment Required",
+    "steps": [
+      "1. Deploy VendorListRestlet.js to NetSuite Production account",
+      "2. Configure OAuth credentials for production access",
+      "3. Run extraction script with production RESTlet URL",
+      "4. Replace this template with actual vendor data"
+    ],
+    "restletScript": "netsuite-scripts/VendorListRestlet.js",
+    "extractionScript": "scripts/extract-vendors-via-restlet-prod.js",
+    "productionUrl": "https://11516011.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script={SCRIPT_ID}&deploy={DEPLOY_ID}"
+  },
+  "summary": {
+    "totalVendors": 0,
+    "activeVendors": 0,
+    "inactiveVendors": 0,
+    "vendorsWithCompanyName": 0,
+    "vendorsWithEntityId": 0,
+    "status": "TEMPLATE - NO ACTUAL DATA"
+  },
+  "existingVendorMappings": {
+    "description": "Known vendor mappings from OPMS to NetSuite",
+    "mappings": [
+      {
+        "opms_vendor_id": 999,
+        "opms_vendor_name": "Dekortex",
+        "opms_vendor_abrev": "DEKO",
+        "netsuite_vendor_id": 326,
+        "netsuite_vendor_name": "Dekortex",
+        "mapping_confidence": "high",
+        "mapping_method": "manual",
+        "notes": "Verified through testing - Item 8477"
+      }
+    ]
+  },
+  "topOpmsVendors": {
+    "description": "Top 10 most used vendors in OPMS system",
+    "vendors": [
+      {
+        "opms_id": 77,
+        "name": "Regal",
+        "product_count": 544,
+        "priority": "HIGH"
+      },
+      {
+        "opms_id": 8,
+        "name": "Morgan/MJD",
+        "product_count": 320,
+        "priority": "HIGH"
+      },
+      {
+        "opms_id": 62,
+        "name": "Pointe International",
+        "product_count": 313,
+        "priority": "HIGH"
+      },
+      {
+        "opms_id": 40,
+        "name": "Elite Textile",
+        "product_count": 299,
+        "priority": "HIGH"
+      },
+      {
+        "opms_id": 54,
+        "name": "Valdese Weavers",
+        "product_count": 254,
+        "priority": "HIGH"
+      },
+      {
+        "opms_id": 66,
+        "name": "Universal Textile Mills",
+        "product_count": 221,
+        "priority": "HIGH"
+      },
+      {
+        "opms_id": 64,
+        "name": "DeLeo Textiles",
+        "product_count": 173,
+        "priority": "HIGH"
+      },
+      {
+        "opms_id": 48,
+        "name": "Sunbury & Sunbrella",
+        "product_count": 159,
+        "priority": "HIGH"
+      },
+      {
+        "opms_id": 114,
+        "name": "Kaslen Textiles",
+        "product_count": 135,
+        "priority": "HIGH"
+      },
+      {
+        "opms_id": 82,
+        "name": "Heritage Fabrics",
+        "product_count": 129,
+        "priority": "HIGH"
+      }
+    ],
+    "total_active_vendors": 240
+  },
+  "vendorDataStructure": {
+    "description": "Expected structure for each vendor in the production data",
+    "example": {
+      "id": "NetSuite Internal ID",
+      "entityid": "NetSuite Entity ID",
+      "companyname": "Company Name",
+      "displayName": "Display Name (companyname || entityid || 'Vendor ' + id)",
+      "isinactive": false,
+      "subsidiary": "Subsidiary ID",
+      "currency": "Currency Code",
+      "terms": "Payment Terms",
+      "creditlimit": "Credit Limit",
+      "balance": "Current Balance",
+      "unbilledorders": "Unbilled Orders Amount",
+      "lastmodifieddate": "Last Modified Date",
+      "datecreated": "Date Created",
+      "isActive": true,
+      "hasCompanyName": true,
+      "hasEntityId": true,
+      "extractedAt": "2025-01-15T00:00:00.000Z"
+    }
+  },
+  "vendors": [],
+  "nextSteps": [
+    "1. Deploy VendorListRestlet.js to NetSuite Production",
+    "2. Update extraction script with correct production RESTlet URL",
+    "3. Run extraction script to populate this file with actual vendor data",
+    "4. Verify vendor mappings between OPMS and NetSuite",
+    "5. Update vendor mapping table with production data"
+  ],
+  "troubleshooting": {
+    "commonIssues": [
+      {
+        "issue": "401 Unauthorized Error",
+        "cause": "OAuth credentials not valid for production or RESTlet not deployed",
+        "solution": "Verify OAuth setup and deploy VendorListRestlet to production"
+      },
+      {
+        "issue": "404 Not Found Error",
+        "cause": "SuiteTalk REST API not enabled or incorrect endpoint",
+        "solution": "Use RESTlet approach instead of direct REST API"
+      },
+      {
+        "issue": "RESTlet not accessible",
+        "cause": "Script ID or deployment ID incorrect",
+        "solution": "Verify RESTlet deployment and update script/deploy IDs"
+      }
+    ]
+  }
+}
+
+

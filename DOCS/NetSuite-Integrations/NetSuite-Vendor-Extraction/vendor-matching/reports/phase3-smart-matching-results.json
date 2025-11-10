@@ -1,0 +1,852 @@
+{
+  "generated_at": "2025-10-15T22:55:10.842Z",
+  "statistics": {
+    "total_processed": 91,
+    "tier1_auto": 1,
+    "tier2_approval": 5,
+    "tier3_review": 10,
+    "tier4_no_match": 75,
+    "conflicts_found": 0
+  },
+  "tier1_auto_mapped": [
+    {
+      "opms_id": 252,
+      "opms_name": "Crypton Home ",
+      "opms_abrev": "CRP HM",
+      "netsuite_id": "367",
+      "netsuite_name": "Crypton Home",
+      "netsuite_entity_id": "Crypton Home",
+      "similarity": "100.0%",
+      "conflict": "NO",
+      "conflict_with_opms_id": null,
+      "conflict_with_opms_name": null
+    }
+  ],
+  "tier2_for_approval": [
+    {
+      "opms_id": 225,
+      "opms_name": "Ambienta",
+      "opms_abrev": "AB",
+      "suggested_netsuite_id": "3851",
+      "suggested_netsuite_name": "Ambience Textiles",
+      "suggested_netsuite_entity_id": "Ambience Textiles",
+      "similarity": "75.0%",
+      "alternative_1_name": "Limonta",
+      "alternative_1_id": "561",
+      "alternative_1_similarity": "37.5%",
+      "alternative_2_name": "Pointe International",
+      "alternative_2_id": "574",
+      "alternative_2_similarity": "37.5%",
+      "conflict": "YES",
+      "conflict_with": "Ambience Textiles (ID: 142)",
+      "action": ""
+    },
+    {
+      "opms_id": 164,
+      "opms_name": "Babei",
+      "opms_abrev": "BAB",
+      "suggested_netsuite_id": "4307",
+      "suggested_netsuite_name": "Babai",
+      "suggested_netsuite_entity_id": "Babai",
+      "similarity": "80.0%",
+      "alternative_1_name": "Annabel Textiles",
+      "alternative_1_id": "3824",
+      "alternative_1_similarity": "42.9%",
+      "alternative_2_name": "Vanelli",
+      "alternative_2_id": "586",
+      "alternative_2_similarity": "42.9%",
+      "conflict": "YES",
+      "conflict_with": "Babai (ID: 189)",
+      "action": ""
+    },
+    {
+      "opms_id": 221,
+      "opms_name": "Duvaltex",
+      "opms_abrev": "DVL",
+      "suggested_netsuite_id": "548",
+      "suggested_netsuite_name": "Devantex",
+      "suggested_netsuite_entity_id": "Devantex",
+      "similarity": "75.0%",
+      "alternative_1_name": "Bruvatex",
+      "alternative_1_id": "349",
+      "alternative_1_similarity": "62.5%",
+      "alternative_2_name": "Dreamtex Intl",
+      "alternative_2_id": "3848",
+      "alternative_2_similarity": "62.5%",
+      "conflict": "YES",
+      "conflict_with": "Devantex (ID: 59)",
+      "action": ""
+    },
+    {
+      "opms_id": 69,
+      "opms_name": "GTex",
+      "opms_abrev": "GTEX",
+      "suggested_netsuite_id": "401",
+      "suggested_netsuite_name": "G-Tex",
+      "suggested_netsuite_entity_id": "G-Tex",
+      "similarity": "80.0%",
+      "alternative_1_name": "Cortex",
+      "alternative_1_id": "361",
+      "alternative_1_similarity": "50.0%",
+      "alternative_2_name": "Ramtex Inc.",
+      "alternative_2_id": "575",
+      "alternative_2_similarity": "50.0%",
+      "conflict": "NO",
+      "conflict_with": "",
+      "action": ""
+    },
+    {
+      "opms_id": 185,
+      "opms_name": "Sirio Tendaggi S.r.l.",
+      "opms_abrev": "SIR",
+      "suggested_netsuite_id": "3841",
+      "suggested_netsuite_name": "Sirio Tendaggi",
+      "suggested_netsuite_entity_id": "Sirio Tendaggi",
+      "similarity": "77.8%",
+      "alternative_1_name": "Gio Emi Srl",
+      "alternative_1_id": "4318",
+      "alternative_1_similarity": "50.0%",
+      "alternative_2_name": "Lino Textil",
+      "alternative_2_id": "4298",
+      "alternative_2_similarity": "38.9%",
+      "conflict": "NO",
+      "conflict_with": "",
+      "action": ""
+    }
+  ],
+  "tier3_for_review": [
+    {
+      "opms_id": 146,
+      "opms_name": "Baumann",
+      "opms_abrev": "BAU",
+      "top_match_name": "P. Kaufmann",
+      "top_match_id": "465",
+      "top_match_similarity": "60.0%",
+      "match_2": "Babai (42.9%)",
+      "match_3": "Bartson (42.9%)",
+      "match_4": "Blue Kompany (41.7%)",
+      "match_5": "Bruvatex (37.5%)",
+      "notes": ""
+    },
+    {
+      "opms_id": 242,
+      "opms_name": "FabTex",
+      "opms_abrev": "FBX",
+      "top_match_name": "Facotex",
+      "top_match_id": "4316",
+      "top_match_similarity": "71.4%",
+      "match_2": "Ramtex Inc. (66.7%)",
+      "match_3": "Fibertex (62.5%)",
+      "match_4": "Cortex (50.0%)",
+      "match_5": "Devantex (50.0%)",
+      "notes": ""
+    },
+    {
+      "opms_id": 229,
+      "opms_name": "Fairtex",
+      "opms_abrev": "FT",
+      "top_match_name": "Facotex",
+      "top_match_id": "4316",
+      "top_match_similarity": "71.4%",
+      "match_2": "Fibertex (62.5%)",
+      "match_3": "Cortex (57.1%)",
+      "match_4": "Ramtex Inc. (57.1%)",
+      "match_5": "Dekortex (50.0%)",
+      "notes": ""
+    },
+    {
+      "opms_id": 192,
+      "opms_name": "Foster",
+      "opms_abrev": "FSTR",
+      "top_match_name": "Master Fabrics",
+      "top_match_id": "447",
+      "top_match_similarity": "66.7%",
+      "match_2": "Cositex (57.1%)",
+      "match_3": "Cortex (50.0%)",
+      "match_4": "Prosetex (50.0%)",
+      "match_5": "Facotex (42.9%)",
+      "notes": ""
+    },
+    {
+      "opms_id": 151,
+      "opms_name": "Gilman",
+      "opms_abrev": "GIL",
+      "top_match_name": "Dilhan",
+      "top_match_id": "591",
+      "top_match_similarity": "66.7%",
+      "match_2": "Golding Fabrics (42.9%)",
+      "match_3": "Guilford of Maine (35.3%)",
+      "match_4": "Deltracon (33.3%)",
+      "match_5": "Elvin Fabrics (33.3%)",
+      "notes": ""
+    },
+    {
+      "opms_id": 93,
+      "opms_name": "International Acetex",
+      "opms_abrev": "IATX",
+      "top_match_name": "Facotex",
+      "top_match_id": "4316",
+      "top_match_similarity": "71.4%",
+      "match_2": "Cortex (50.0%)",
+      "match_3": "Dreamtex Intl (50.0%)",
+      "match_4": "Fibertex (50.0%)",
+      "match_5": "G-Tex (50.0%)",
+      "notes": ""
+    },
+    {
+      "opms_id": 6,
+      "opms_name": "S. Harris",
+      "opms_abrev": "SHA",
+      "top_match_name": "S. Harris & Co, Inc",
+      "top_match_id": "489",
+      "top_match_similarity": "66.7%",
+      "match_2": "JB Martin (44.4%)",
+      "match_3": "Albatros (37.5%)",
+      "match_4": "F & S (37.5%)",
+      "match_5": "Hanes (37.5%)",
+      "notes": ""
+    },
+    {
+      "opms_id": 101,
+      "opms_name": "Schellens",
+      "opms_abrev": "SCH",
+      "top_match_name": "Schneiders Textiles",
+      "top_match_id": "493",
+      "top_match_similarity": "60.0%",
+      "match_2": "Algemene (33.3%)",
+      "match_3": "Atelier (33.3%)",
+      "match_4": "De Leo Textiles (33.3%)",
+      "match_5": "Dorell (33.3%)",
+      "notes": ""
+    },
+    {
+      "opms_id": 102,
+      "opms_name": "Swavelle",
+      "opms_abrev": "SMC",
+      "top_match_name": "Caravelle",
+      "top_match_id": "3853",
+      "top_match_similarity": "66.7%",
+      "match_2": "Swisstulle (50.0%)",
+      "match_3": "Tavelmo (50.0%)",
+      "match_4": "Vanelli (50.0%)",
+      "match_5": "Swavelle -Mill Creek (40.0%)",
+      "notes": ""
+    },
+    {
+      "opms_id": 206,
+      "opms_name": "Vino Kadife",
+      "opms_abrev": "VIN",
+      "top_match_name": "Teksko Kadife",
+      "top_match_id": "507",
+      "top_match_similarity": "61.5%",
+      "match_2": "High Five Textiles (36.4%)",
+      "match_3": "Lino Textil (36.4%)",
+      "match_4": "Illerom Trading (33.3%)",
+      "match_5": "Libeco Lagae (33.3%)",
+      "notes": ""
+    }
+  ],
+  "tier4_no_match": [
+    {
+      "opms_id": 264,
+      "opms_name": "Aaron Fabrics",
+      "opms_abrev": "AAR",
+      "best_match": "Bartson",
+      "best_similarity": "57.1%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 212,
+      "opms_name": "Abercrombie Textiles",
+      "opms_abrev": "ABT",
+      "best_match": "Harper Home",
+      "best_similarity": "36.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 253,
+      "opms_name": "Agora",
+      "opms_abrev": "ARA",
+      "best_match": "Fabric Guru",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 83,
+      "opms_name": "Al Fresco (Swavelle/Mill Creek Fabrics)",
+      "opms_abrev": "AF",
+      "best_match": "Swavelle -Mill Creek",
+      "best_similarity": "56.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 16,
+      "opms_name": "Andaru",
+      "opms_abrev": "AN",
+      "best_match": "Annabel Textiles",
+      "best_similarity": "42.9%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 246,
+      "opms_name": "Avant Garde",
+      "opms_abrev": "AG",
+      "best_match": "Advantage Fabric",
+      "best_similarity": "54.5%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 258,
+      "opms_name": "Bart Halpern",
+      "opms_abrev": "BRTH",
+      "best_match": "Atelier",
+      "best_similarity": "41.7%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 184,
+      "opms_name": "Bartolini",
+      "opms_abrev": "BAR",
+      "best_match": "Bartson",
+      "best_similarity": "55.6%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 251,
+      "opms_name": "Bella Home",
+      "opms_abrev": "BEH",
+      "best_match": "Bella-Dura",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 147,
+      "opms_name": "Bimitex",
+      "opms_abrev": "BM",
+      "best_match": "Cositex",
+      "best_similarity": "57.1%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 211,
+      "opms_name": "Boyteks",
+      "opms_abrev": "BTK",
+      "best_match": "Marteks",
+      "best_similarity": "57.1%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 235,
+      "opms_name": "Bradlee",
+      "opms_abrev": "BL",
+      "best_match": "Boltaflex",
+      "best_similarity": "44.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 148,
+      "opms_name": "Braemore",
+      "opms_abrev": "BMORE",
+      "best_match": "Bravo Fabrics",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 172,
+      "opms_name": "Claridge Textiles",
+      "opms_abrev": "CLRG",
+      "best_match": "Elite Textile",
+      "best_similarity": "37.5%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 149,
+      "opms_name": "Climatex",
+      "opms_abrev": "CMTX",
+      "best_match": "Bruvatex",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 213,
+      "opms_name": "Cortex formally Cortech",
+      "opms_abrev": "COR",
+      "best_match": "Charles Martel",
+      "best_similarity": "34.8%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 247,
+      "opms_name": "Deitsch Plastic Co. Inc.",
+      "opms_abrev": "DTPL",
+      "best_match": "Aliseo Velluti",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 150,
+      "opms_name": "Delano House",
+      "opms_abrev": "DH",
+      "best_match": "Crypton Home",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 24,
+      "opms_name": "Diamond Foam",
+      "opms_abrev": "DF",
+      "best_match": "Limonta",
+      "best_similarity": "41.7%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 262,
+      "opms_name": "DT Fabrics",
+      "opms_abrev": "DTF",
+      "best_match": "Radiate Textiles",
+      "best_similarity": "28.6%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 222,
+      "opms_name": "DTN Textiles",
+      "opms_abrev": "DT",
+      "best_match": "Danzo",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 228,
+      "opms_name": "Ekart",
+      "opms_abrev": "EK",
+      "best_match": "Dekortex",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 234,
+      "opms_name": "Epic Textiles",
+      "opms_abrev": "EP",
+      "best_match": "Elite Textile",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 243,
+      "opms_name": "Fashion Fabrics LA ",
+      "opms_abrev": "FFLA",
+      "best_match": "Vision Fabrics",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 110,
+      "opms_name": "Fisher Textiles",
+      "opms_abrev": null,
+      "best_match": "Master Fabrics",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 240,
+      "opms_name": "Flocktex Industries Ltd. ",
+      "opms_abrev": "FLI",
+      "best_match": "Alois Tessitura Serica",
+      "best_similarity": "36.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 230,
+      "opms_name": "Home Secrets",
+      "opms_abrev": "HSE",
+      "best_match": "Hemp Traders",
+      "best_similarity": "41.7%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 232,
+      "opms_name": "Huachen",
+      "opms_abrev": "HC",
+      "best_match": "Hanes",
+      "best_similarity": "42.9%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 70,
+      "opms_name": "Illuminaire",
+      "opms_abrev": "ILLU",
+      "best_match": "Illerom Trading",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 152,
+      "opms_name": "Imatex",
+      "opms_abrev": "IMTX",
+      "best_match": "Bruvatex",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 153,
+      "opms_name": "Innovation Textile CO. ",
+      "opms_abrev": "INTX",
+      "best_match": "Vision Fabrics",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 194,
+      "opms_name": "J&L Fabrics Inc",
+      "opms_abrev": "J&L FB",
+      "best_match": "Alendel",
+      "best_similarity": "42.9%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 219,
+      "opms_name": "Joseph Nobel ",
+      "opms_abrev": "JNI",
+      "best_match": "Alendel",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 154,
+      "opms_name": "Katerina Tana Collection",
+      "opms_abrev": "KTC",
+      "best_match": "American Blackout Company",
+      "best_similarity": "37.5%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 266,
+      "opms_name": "KM Fabrics",
+      "opms_abrev": "KMF",
+      "best_match": "King Textiles",
+      "best_similarity": "25.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 165,
+      "opms_name": "LA Fred's Fabric Inc",
+      "opms_abrev": "LAF",
+      "best_match": "Nardes",
+      "best_similarity": "44.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 216,
+      "opms_name": "Lady Fabrics",
+      "opms_abrev": "LYF",
+      "best_match": "Lampe Textiles",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 156,
+      "opms_name": "Lullaby",
+      "opms_abrev": "LY",
+      "best_match": "Blue Kompany",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 157,
+      "opms_name": "Marvin Jacobs",
+      "opms_abrev": "MJCB",
+      "best_match": "American Blackout Company",
+      "best_similarity": "41.2%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 237,
+      "opms_name": "Maxland",
+      "opms_abrev": "ML",
+      "best_match": "Kaslen Textiles",
+      "best_similarity": "42.9%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 138,
+      "opms_name": "Miliken",
+      "opms_abrev": null,
+      "best_match": "Milliken & Co.",
+      "best_similarity": "58.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 244,
+      "opms_name": "Nautolex",
+      "opms_abrev": null,
+      "best_match": "Facotex",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 105,
+      "opms_name": "Noble Collections",
+      "opms_abrev": null,
+      "best_match": "Softline Home Fashion",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 265,
+      "opms_name": "Novalan",
+      "opms_abrev": "NVL",
+      "best_match": "Marcovaldo",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 128,
+      "opms_name": "O Sullivan",
+      "opms_abrev": "OSL",
+      "best_match": "World of Linen",
+      "best_similarity": "35.7%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 169,
+      "opms_name": "Parthenon Prints",
+      "opms_abrev": "PARTHE",
+      "best_match": "Eastern Accents",
+      "best_similarity": "43.8%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 163,
+      "opms_name": "Penelope",
+      "opms_abrev": "PEN",
+      "best_match": "Elite Textile",
+      "best_similarity": "37.5%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 14,
+      "opms_name": "Pickering International",
+      "opms_abrev": null,
+      "best_match": "King Textiles",
+      "best_similarity": "44.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 174,
+      "opms_name": "Raymakers",
+      "opms_abrev": "RYMKR",
+      "best_match": "Radiate Textiles",
+      "best_similarity": "44.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 19,
+      "opms_name": "Replin",
+      "opms_abrev": "REP",
+      "best_match": "Elvin Fabrics",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 18,
+      "opms_name": "Richard Bernard",
+      "opms_abrev": "RB",
+      "best_match": "Altizer & Co",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 227,
+      "opms_name": "Rioma",
+      "opms_abrev": "RIO",
+      "best_match": "Limonta",
+      "best_similarity": "42.9%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 139,
+      "opms_name": "Roc - Lon",
+      "opms_abrev": "ROC",
+      "best_match": "World of Linen",
+      "best_similarity": "35.7%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 254,
+      "opms_name": "Signature Textiles",
+      "opms_abrev": "ST",
+      "best_match": "Stratum",
+      "best_similarity": "44.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 175,
+      "opms_name": "Skai",
+      "opms_abrev": "SKA",
+      "best_match": "Babai",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 271,
+      "opms_name": "SKYE MODA",
+      "opms_abrev": "SM",
+      "best_match": "Blue Kompany",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 208,
+      "opms_name": "Sterling Decor Concepts",
+      "opms_abrev": "SDC",
+      "best_match": "Eastern Accents",
+      "best_similarity": "39.1%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 135,
+      "opms_name": "Stone Harbour",
+      "opms_abrev": null,
+      "best_match": "Softline Home Fashion",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 190,
+      "opms_name": "Stotz Architects of Fabrics",
+      "opms_abrev": "STZ",
+      "best_match": "Eastern Accents",
+      "best_similarity": "31.6%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 48,
+      "opms_name": "Sunbury & Sunbrella",
+      "opms_abrev": "SUN",
+      "best_match": "Sunbury Textile Mills",
+      "best_similarity": "47.6%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 268,
+      "opms_name": "Taka Fabrics",
+      "opms_abrev": "TAK",
+      "best_match": "Para",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 173,
+      "opms_name": "Tempofabrics",
+      "opms_abrev": "TMP",
+      "best_match": "Fabricut",
+      "best_similarity": "41.7%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 248,
+      "opms_name": "Tessutica",
+      "opms_abrev": "TECA",
+      "best_match": "Alois Tessitura Serica",
+      "best_similarity": "36.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 226,
+      "opms_name": "Testingggg",
+      "opms_abrev": "Testing",
+      "best_match": "Covington",
+      "best_similarity": "30.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 61,
+      "opms_name": "Texind, Inc.",
+      "opms_abrev": "TEX",
+      "best_match": "Texao",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 199,
+      "opms_name": "The Isle Mill",
+      "opms_abrev": "TIM",
+      "best_match": "American Silk Mills",
+      "best_similarity": "47.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 158,
+      "opms_name": "Tommy Bahama Homes",
+      "opms_abrev": "TBH",
+      "best_match": "Crypton Home",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 245,
+      "opms_name": "Topteks",
+      "opms_abrev": "TPTX",
+      "best_match": "Marteks",
+      "best_similarity": "57.1%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 204,
+      "opms_name": "Torri Lana",
+      "opms_abrev": "TLN",
+      "best_match": "S. Harris & Co, Inc",
+      "best_similarity": "41.7%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 231,
+      "opms_name": "Tuvatextil",
+      "opms_abrev": "TUV",
+      "best_match": "Lino Textil",
+      "best_similarity": "54.5%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 196,
+      "opms_name": "Ultrafabric",
+      "opms_abrev": "UF",
+      "best_match": "Fabricut",
+      "best_similarity": "36.4%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 7,
+      "opms_name": "Vervain",
+      "opms_abrev": null,
+      "best_match": "Elvin Fabrics",
+      "best_similarity": "57.1%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 241,
+      "opms_name": "Videre",
+      "opms_abrev": "VDE",
+      "best_match": "Fibertex",
+      "best_similarity": "50.0%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 187,
+      "opms_name": "Wimpheimer",
+      "opms_abrev": "WIM",
+      "best_match": "Hemp Traders",
+      "best_similarity": "33.3%",
+      "reason": "Similarity too low (<60%)"
+    },
+    {
+      "opms_id": 215,
+      "opms_name": "Winchester Fabrics",
+      "opms_abrev": "WIN",
+      "best_match": "Fibertex",
+      "best_similarity": "40.0%",
+      "reason": "Similarity too low (<60%)"
+    }
+  ],
+  "conflicts": []
+}

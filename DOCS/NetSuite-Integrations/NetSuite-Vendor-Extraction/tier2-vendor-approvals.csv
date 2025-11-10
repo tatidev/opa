@@ -1,0 +1,6 @@
+OPMS_ID,OPMS_Vendor_Name,OPMS_Abbrev,Suggested_NS_ID,Suggested_NS_Name,Suggested_NS_Entity_ID,Similarity,Alternative_1_Name,Alternative_1_ID,Alternative_1_Similarity,Alternative_2_Name,Alternative_2_ID,Alternative_2_Similarity,Conflict,Conflict_With,ACTION (approve/reject/edit)
+225,"Ambienta","AB",3851,"Ambience Textiles","Ambience Textiles",75.0%,"Limonta",561,37.5%,"Pointe International",574,37.5%,YES,"Ambience Textiles (ID: 142)",
+164,"Babei","BAB",4307,"Babai","Babai",80.0%,"Annabel Textiles",3824,42.9%,"Vanelli",586,42.9%,YES,"Babai (ID: 189)",
+221,"Duvaltex","DVL",548,"Devantex","Devantex",75.0%,"Bruvatex",349,62.5%,"Dreamtex Intl",3848,62.5%,YES,"Devantex (ID: 59)",
+69,"GTex","GTEX",401,"G-Tex","G-Tex",80.0%,"Cortex",361,50.0%,"Ramtex Inc.",575,50.0%,NO,"",
+185,"Sirio Tendaggi S.r.l.","SIR",3841,"Sirio Tendaggi","Sirio Tendaggi",77.8%,"Gio Emi Srl",4318,50.0%,"Lino Textil",4298,38.9%,NO,"",

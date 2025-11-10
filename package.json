@@ -1,0 +1,85 @@
+{
+  "name": "opuzen-api",
+  "version": "1.1.0",
+  "description": "Opuzen API",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "NODE_ENV=test jest --runInBand",
+    "test:watch": "NODE_ENV=test jest --watch",
+    "test:coverage": "NODE_ENV=test jest --coverage",
+    "test:unit": "NODE_ENV=test jest --runInBand --testPathIgnorePatterns=\"netsuite.test.js|netsuiteItemService.test.js|auth.test.js|users.test.js|vendors.test.js\"",
+    "test:integration": "NODE_ENV=development NETSUITE_LIVE_TEST=true jest --runInBand --testPathPattern=\"netsuite|netsuiteItemService\"",
+    "test:integration:mock": "NODE_ENV=test jest --runInBand --testPathPattern=\"netsuite|netsuiteItemService\"",
+    "db:setup": "node src/db/setup.js",
+    "db:migrate": "node src/db/migrate.js",
+    "db:migrate:rollback": "node src/db/migrate.js rollback",
+    "db:verify": "node src/db/verify.js",
+    "netsuite:test": "node scripts/test-netsuite-item-creation.js",
+    "netsuite:test:basic": "node scripts/test-netsuite-item-creation.js --item=basic --dry-run",
+    "netsuite:test:bulk": "node scripts/test-netsuite-item-creation.js --bulk --count=5",
+    "netsuite:test:errors": "node scripts/test-netsuite-item-creation.js --test=error-cases",
+    "netsuite:live": "node scripts/test-netsuite-live.js",
+    "netsuite:live:config": "node scripts/test-netsuite-live.js --test=config",
+    "netsuite:live:auth": "node scripts/test-netsuite-live.js --test=auth",
+    "netsuite:live:create": "node scripts/test-netsuite-live.js --test=create-item",
+    "netsuite:validate": "node scripts/validate-netsuite-config.js",
+    "netsuite:validate:tax": "node scripts/validate-netsuite-config.js --check=tax-schedules",
+    "netsuite:validate:all": "node scripts/validate-netsuite-config.js --check=all --verbose",
+    "opms:test": "node scripts/test-opms-to-netsuite.js --dry-run",
+    "opms:sync": "node scripts/test-opms-to-netsuite.js",
+    "opms:sync:verbose": "node scripts/test-opms-to-netsuite.js --verbose",
+    "restlet:test": "node scripts/test-netsuite-restlet.js",
+    "restlet:test:single": "node scripts/test-netsuite-restlet.js --test=single --dry-run",
+    "restlet:test:bulk": "node scripts/test-netsuite-restlet.js --test=bulk --count=3",
+    "restlet:test:opms": "node scripts/test-netsuite-restlet.js --test=opms",
+    "restlet:live": "node scripts/test-netsuite-restlet.js --test=single"
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.913.0",
+    "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "mysql2": "^3.6.5",
+    "node-fetch": "^2.7.0",
+    "oauth-1.0a": "^2.2.6",
+    "pm2": "^5.3.0",
+    "sequelize": "^6.37.7",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^12.2.0",
+    "chai": "^4.3.10",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "sinon": "^17.0.1",
+    "supertest": "^6.3.3"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/__tests__/setup.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/index.js",
+      "!src/db/**/*.js",
+      "!src/__tests__/**/*.js"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
+  }
+}

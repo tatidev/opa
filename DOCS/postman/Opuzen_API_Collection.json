@@ -1,0 +1,206 @@
+{
+  "info": {
+    "name": "Opuzen API Collection",
+    "description": "API endpoints for the Opuzen API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "NetSuite",
+      "item": [
+        {
+          "name": "Create Inventory Item (RESTlet)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": \"TEST-RESTLET-001\",\n  \"displayName\": \"Test Item\",\n  \"opmsProductId\": 12345,\n  \"opmsItemId\": 67890\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/netsuite/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","netsuite","items"]
+            },
+            "description": "Creates an inventory item via the custom RESTlet. Supports itemId, displayName, opmsProductId (numeric), and opmsItemId (numeric)."
+          },
+          "response": []
+        },
+        {
+          "name": "Inventory Fields (Schema)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/netsuite/inventory/fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","netsuite","inventory","fields"]
+            },
+            "description": "Lists flattened inventoryitem fields from NetSuite schema."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"search\": {\n        \"value\": \"silk\"\n    },\n    \"draw\": 1,\n    \"start\": 0,\n    \"length\": 10,\n    \"order\": [\n        {\n            \"column\": 0,\n            \"dir\": \"asc\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "search"
+              ]
+            },
+            "description": "Search products with server-side processing for datatables"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Items for Datatable",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"product_id\": \"1\",\n    \"product_type\": \"R\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/search/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "search",
+                "items"
+              ]
+            },
+            "description": "Search items with server-side processing for datatables, matching legacy get_product_items functionality"
+          },
+          "response": []
+        },
+        {
+          "name": "Typeahead Products List",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"query\": \"Catalonia\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/typeahead_products_list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "typeahead_products_list"
+              ]
+            },
+            "description": "Search products and items for typeahead, matching legacy typeahead_products_list functionality"
+          },
+          "response": []
+        },
+        {
+          "name": "Typeahead Products List (Items Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"query\": \"Catalonia\",\n    \"itemsOnly\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/typeahead_products_list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "typeahead_products_list"
+              ]
+            },
+            "description": "Search only items for typeahead (no products)"
+          },
+          "response": []
+        },
+        {
+          "name": "Typeahead Products List (No Digital)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"query\": \"Catalonia\",\n    \"includeDigital\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/typeahead_products_list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "typeahead_products_list"
+              ]
+            },
+            "description": "Search products and items for typeahead, excluding digital products"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+} 

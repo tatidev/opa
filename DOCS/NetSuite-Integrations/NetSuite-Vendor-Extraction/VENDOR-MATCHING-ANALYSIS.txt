@@ -1,0 +1,269 @@
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+🚨 VENDOR MAPPING DIAGNOSTIC - EXECUTIVE SUMMARY
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+📊 CURRENT STATE:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Total OPMS Vendors:           245
+Total NetSuite Vendors:       365
+Existing Mappings:            5
+
+✅ Perfect Matches:           0 (0.0% of OPMS vendors)
+⚠️  Name Mismatches:           5 (ALL MAPPED VENDORS ARE WRONG!)
+📝 Unmapped OPMS Vendors:     240 (2.0% coverage)
+📝 Unmapped NetSuite Vendors: 362
+
+🎯 CRITICAL METRICS:
+   OPMS Mapping Coverage:     2.0% ❌ (TARGET: 95%+)
+   Strict Check Pass Rate:    0.0% ❌ (TARGET: 100%)
+
+🚨 SEVERITY: CRITICAL
+
+📋 ISSUES:
+   1. Only 5 vendors mapped out of 245 (2.0%)
+   2. All 5 existing mappings are INCORRECT
+   3. 240 OPMS vendors cannot be exported to NetSuite
+   4. Export queries will fail for 100% of mapped vendors
+
+⚡ IMMEDIATE IMPACT:
+   • 98% of OPMS vendors CANNOT be exported
+   • Existing 5 mappings point to WRONG NetSuite vendors
+   • ALL item exports with vendors will FAIL
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+❌ BROKEN MAPPINGS - THESE ARE MAPPED TO WRONG VENDORS!
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Found 5 incorrect mappings:
+
+1. MAPPING ID: 6
+   ─────────────────────────────────────────────────────────────────────────────
+   OPMS Vendor (ID 22):
+      Name: "Fabricut"
+      Abbr: FBT
+
+   ❌ MAPPED TO WRONG NetSuite Vendor (ID 340):
+      Name: "AT&T - Office 2022"
+      Entity ID: AT&T - Office 2022
+
+   📊 Details:
+      Similarity Score: 0.11 (0.0 = completely different)
+      Mapping Method: imported
+      Created: 9/18/2025
+
+   🔧 ACTION REQUIRED:
+      1. Delete this incorrect mapping (ID 6)
+      2. Create correct mapping for "Fabricut"
+
+2. MAPPING ID: 8
+   ─────────────────────────────────────────────────────────────────────────────
+   OPMS Vendor (ID 89):
+      Name: "P. Kaufmann"
+      Abbr: PKM
+
+   ❌ MAPPED TO WRONG NetSuite Vendor (ID 442):
+      Name: "Los Angeles County Tax Collector"
+      Entity ID: Los Angeles County Tax Collector
+
+   📊 Details:
+      Similarity Score: 0.09 (0.0 = completely different)
+      Mapping Method: imported
+      Created: 9/18/2025
+
+   🔧 ACTION REQUIRED:
+      1. Delete this incorrect mapping (ID 8)
+      2. Create correct mapping for "P. Kaufmann"
+
+3. MAPPING ID: 9
+   ─────────────────────────────────────────────────────────────────────────────
+   OPMS Vendor (ID 116):
+      Name: "P/K Lifestyles"
+      Abbr: PKL
+
+   ❌ MAPPED TO WRONG NetSuite Vendor (ID 884):
+      Name: "NOT FOUND"
+      Entity ID: undefined
+
+   📊 Details:
+      Similarity Score: 0.00 (0.0 = completely different)
+      Mapping Method: imported
+      Created: 9/18/2025
+
+   🔧 ACTION REQUIRED:
+      1. Delete this incorrect mapping (ID 9)
+      2. Create correct mapping for "P/K Lifestyles"
+
+4. MAPPING ID: 10
+   ─────────────────────────────────────────────────────────────────────────────
+   OPMS Vendor (ID 193):
+      Name: "Radiate Textiles"
+      Abbr: RDTX
+
+   ❌ MAPPED TO WRONG NetSuite Vendor (ID 302):
+      Name: "NOT FOUND"
+      Entity ID: undefined
+
+   📊 Details:
+      Similarity Score: 0.00 (0.0 = completely different)
+      Mapping Method: imported
+      Created: 9/18/2025
+
+   🔧 ACTION REQUIRED:
+      1. Delete this incorrect mapping (ID 10)
+      2. Create correct mapping for "Radiate Textiles"
+
+5. MAPPING ID: 7
+   ─────────────────────────────────────────────────────────────────────────────
+   OPMS Vendor (ID 6):
+      Name: "S. Harris"
+      Abbr: SHA
+
+   ❌ MAPPED TO WRONG NetSuite Vendor (ID 452):
+      Name: "Mercedes-Benz Financial Services"
+      Entity ID: Mercedes-Benz Financial Services
+
+   📊 Details:
+      Similarity Score: 0.19 (0.0 = completely different)
+      Mapping Method: imported
+      Created: 9/18/2025
+
+   🔧 ACTION REQUIRED:
+      1. Delete this incorrect mapping (ID 7)
+      2. Create correct mapping for "S. Harris"
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+📝 TOP PRIORITY UNMAPPED OPMS VENDORS (with NetSuite suggestions)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Showing top 30 OPMS vendors with likely NetSuite matches:
+
+#    OPMS Vendor                    ID     → Suggested NetSuite Match               Sim   
+────────────────────────────────────────────────────────────────────────────────────────────────────
+1    Advantage Fabric               144    → Advantage Fabric                         1.00   🟢
+2    Albatros                       178    → Albatros                                 1.00   🟢
+3    Alendel                        250    → Alendel                                  1.00   🟢
+4    Aliseo Velluti                 79     → Aliseo Velluti                           1.00   🟢
+5    Alois Tessitura                88     → Alois Tessitura                          1.00   🟢
+6    Alois Tessitura Serica         145    → Alois Tessitura Serica                   1.00   🟢
+7    Ambience Textiles              142    → Ambience Textiles                        1.00   🟢
+8    American Blackout Company      249    → American Blackout Company                1.00   🟢
+9    American Silk Mills            12     → American Silk Mills                      1.00   🟢
+10   Andante Algemene               25     → Andante Algemene                         1.00   🟢
+11   Annabel Textiles               87     → Annabel Textiles                         1.00   🟢
+12   Anne Kirk Textiles             205    → Anne Kirk Textiles                       1.00   🟢
+13   Atelier                        143    → Atelier                                  1.00   🟢
+14   B&T Textilia                   127    → B&T Textilia                             1.00   🟢
+15   Babai                          189    → Babai                                    1.00   🟢
+16   Bartson                        76     → Bartson                                  1.00   🟢
+17   Beijing Shengyiran Weaving     111    → Beijing Shengyiran Weaving               1.00   🟢
+18   Bella-Dura                     97     → Bella-Dura                               1.00   🟢
+19   Belo Fluweelweefsels           167    → Belo Fluweelweefsels                     1.00   🟢
+20   Blu Textiles Design            267    → Blu Textiles Design                      1.00   🟢
+21   Blue Kompany                   218    → Blue Kompany                             1.00   🟢
+22   BoltaFlex                      223    → Boltaflex                                1.00   🟢
+23   Bravo Fabrics                  39     → Bravo Fabrics                            1.00   🟢
+24   Brentwood Textiles / STI       68     → Brentwood Textiles / STI                 1.00   🟢
+25   Bruvatex                       67     → Bruvatex                                 1.00   🟢
+26   Caravelle                      183    → Caravelle                                1.00   🟢
+27   Charles Martel                 106    → Charles Martel                           1.00   🟢
+28   Chris Stone                    21     → Chris Stone                              1.00   🟢
+29   Cositex                        133    → Cositex                                  1.00   🟢
+30   Covington                      209    → Covington                                1.00   🟢
+
+Legend: 🟢 = Very confident (0.90+)  🟡 = Likely match (0.75+)  🟠 = Possible match (0.60+)
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+⚠️  OPMS VENDORS WITH NO NETSUITE MATCH FOUND
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+These 20 OPMS vendors have no similar NetSuite vendor (manual review needed):
+
+#    OPMS Vendor Name                         ID     Abbr    
+────────────────────────────────────────────────────────────────────────────────────────────────────
+1    Agora                                    253    ARA     
+2    Al Fresco (Swavelle/Mill Creek Fabrics   83     AF      
+3    Ambienta                                 225    AB      
+4    Andaru                                   16     AN      
+5    Avant Garde                              246    AG      
+6    Bart Halpern                             258    BRTH    
+7    Bartolini                                184    BAR     
+8    Baumann                                  146    BAU     
+9    Bella Home                               251    BEH     
+10   Bimitex                                  147    BM      
+11   Boyteks                                  211    BTK     
+12   Bradlee                                  235    BL      
+13   Braemore                                 148    BMORE   
+14   Climatex                                 149    CMTX    
+15   Cortex formally Cortech                  213    COR     
+16   Deitsch Plastic Co. Inc.                 247    DTPL    
+17   Delano House                             150    DH      
+18   Diamond Foam                             24     DF      
+19   Ekart                                    228    EK      
+20   Flocktex Industries Ltd.                 240    FLI     
+
+💡 These vendors may:
+   - Not exist in NetSuite yet (need to be added to NetSuite first)
+   - Have completely different names in NetSuite (manual mapping required)
+   - Be obsolete vendors no longer used
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+💡 RECOMMENDED ACTION PLAN
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+🔴 PHASE 1: FIX BROKEN MAPPINGS (IMMEDIATE - 15 minutes)
+────────────────────────────────────────────────────────────────────────────────────────────────────
+   Delete 5 incorrect mappings:
+   • DELETE mapping ID 6 (Fabricut → WRONG: AT&T - Office 2022)
+   • DELETE mapping ID 8 (P. Kaufmann → WRONG: Los Angeles County Tax Collector)
+   • DELETE mapping ID 9 (P/K Lifestyles → WRONG: NOT FOUND)
+   • DELETE mapping ID 10 (Radiate Textiles → WRONG: NOT FOUND)
+   • DELETE mapping ID 7 (S. Harris → WRONG: Mercedes-Benz Financial Services)
+
+   SQL Command:
+   ```sql
+   DELETE FROM opms_netsuite_vendor_mapping WHERE id IN (6, 8, 9, 10, 7);
+   ```
+
+🟡 PHASE 2: CREATE HIGH-CONFIDENCE MAPPINGS (1-2 hours)
+────────────────────────────────────────────────────────────────────────────────────────────────────
+   149 vendors with 90%+ match confidence
+   These can be auto-mapped with high confidence
+   Script: node scripts/auto-map-high-confidence-vendors.js
+
+🟡 PHASE 3: REVIEW AND MAP LIKELY MATCHES (2-4 hours)
+────────────────────────────────────────────────────────────────────────────────────────────────────
+   6 vendors with 75-89% match confidence
+   These need quick manual review before mapping
+   Tool: Web UI for bulk vendor mapping approval
+
+🟠 PHASE 4: MANUAL MAPPING (4-8 hours)
+────────────────────────────────────────────────────────────────────────────────────────────────────
+   18 vendors with 60-74% match confidence
+   67 vendors with no close matches
+   These require careful manual mapping
+
+📊 ESTIMATED TIMELINE:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+   Immediate (today):    Phase 1 - Fix broken mappings
+   Day 1-2:             Phase 2 - Auto-map high confidence
+   Week 1:              Phase 3 - Review likely matches
+   Week 1-2:            Phase 4 - Manual mapping remainder
+
+🎯 SUCCESS METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+   Target OPMS Mapping Coverage:      95%+ (currently 2.0%)
+   Target Strict Check Pass Rate:     100% (currently 0.0%)
+   Target Perfect Matches:            233+ vendors (95% of 245)
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+📄 END OF VENDOR MATCHING DIAGNOSTIC REPORT
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Generated: 2025-10-15T19:30:16.806Z
+Source: /Users/paulleasure/Documents/True_North_Dev_LLC/____PROJECTS/____Opuzen/__code/github/opuzen-api/DOCS/NetSuite-Integrations/NetSuite-Vendor-Extraction/vendor-mapping-diagnostic-report.json
+

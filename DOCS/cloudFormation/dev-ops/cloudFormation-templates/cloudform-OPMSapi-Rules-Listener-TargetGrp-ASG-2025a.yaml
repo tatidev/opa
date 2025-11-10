@@ -1,0 +1,207 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template
+
+Parameters:
+  AppName:
+    Description: The name of the application.
+    Type: String
+    Default: OPMS-API
+  DomainName:
+    Description: The name of the primary domain.
+    Type: String
+    Default: opuzen-service.com
+  #-----------------------------------------------------------------------------
+  # IMPORTANT: Make sure SUB-DOIMAIN is Matched to Route53 Hosted Zone
+  #-----------------------------------------------------------------------------
+  SubDomainDEV:
+    Description: The name of the primary domain.
+    Type: String
+    Default: api-dev
+  SubDomainQA:
+    Description: The name of the primary domain.
+    Type: String
+    Default: api-qa
+  SubDomainPROD:
+    Description: The name of the primary domain.
+    Type: String
+    Default: api
+  VPCId:
+    Description: The VPC ID where the ALB and target group will be deployed.
+    Type: String
+    Default: vpc-0374245a0431efd1e
+  Subnet1:
+    Description: The first subnet ID where the ALB will be deployed.
+    Type: String
+    Default: subnet-0f6ff18ee5a9c7b29
+  Subnet2:
+    Description: The second subnet ID where the ALB will be deployed.
+    Type: String
+    Default: subnet-07ebdc23cab656e21
+  CertificateArn:
+    Description: The ARN of the ACM certificate for the HTTPS listener.
+    Type: String
+    Default: arn:aws:acm:us-west-1:992382576482:certificate/cb9c2bc7-3457-45f3-9a9f-92d47d7c3a1d
+  #-----------------------------------------------------------------------------
+  # IMPORTANT: Be sure to have right Launch Template ID per workflow environment
+  #-----------------------------------------------------------------------------
+  LaunchTemplateIdDEV:
+    Description: The launch template the ASG.
+    Type: String
+    Default: lt-08dd2732f057dd5ba
+  # QA
+  LaunchTemplateIdPROD:
+    Description: The launch template for PROD ASG.
+    Type: String
+    Default: lt-0b1e962117f372536
+  #-----------------------------------------------------------------------------
+  # IMPORTANT: Be sure to have right Target Group ARN per workflow environment
+  #-----------------------------------------------------------------------------
+  TargetGrpDEV:
+    Description: The ARN of the target group for the DEV environment.
+    Type: String
+    Default: arn:aws:elasticloadbalancing:us-west-1:992382576482:targetgroup/TG-OPMS-API-DEV/72a1feb9cc19f831 
+  # QA
+  TargetGrpPROD:
+    Description: The ARN of the target group for the PROD environment.
+    Type: String
+    Default: arn:aws:elasticloadbalancing:us-west-1:992382576482:targetgroup/TG-OPMS-API-PROD/14d57d2e9a3f3ccc
+  #-----------------------------------------------------------------------------
+  # IMPORTANT: Be sure to have right Application Load Balancer ARN per workflow 
+  #-----------------------------------------------------------------------------
+  AlbArn:
+    Description: The Application Load Balancer ARN.
+    Type: String
+    Default: arn:aws:elasticloadbalancing:us-west-1:992382576482:loadbalancer/app/ALB-OPMS-API-ALL/b20a4c89a5cbd1a6
+
+Resources:
+  # Target Group ARNs for each environment are in the params (above)
+  
+  HTTPSListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties: 
+      LoadBalancerArn: 
+        Ref: AlbArn
+      Port: 443
+      Protocol: "HTTPS"
+      SslPolicy: "ELBSecurityPolicy-2016-08"
+      Certificates: 
+        - CertificateArn: 
+            Ref: CertificateArn
+      DefaultActions:
+        - Type: "fixed-response"
+          FixedResponseConfig:
+            StatusCode: 404
+            ContentType: "text/plain"
+            MessageBody: "Not Found"
+
+#------------------------------------------------------------------
+# DEV  ListenerRule & AutoScalingGroup
+#------------------------------------------------------------------
+  ListenerRuleDev:
+    Type: "AWS::ElasticLoadBalancingV2::ListenerRule"
+    Properties:
+      ListenerArn: !Ref HTTPSListener
+      Priority: 3
+      Conditions:
+        - Field: "host-header"
+          HostHeaderConfig:
+            Values: 
+              - !Join [ ".",[ !Ref SubDomainDEV, !Ref DomainName ]]
+      Actions:
+        - Type: "forward"
+          TargetGroupArn: !Ref TargetGrpDEV
+
+  AutoScalingGroupDev:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      AutoScalingGroupName: !Join [ "-",["ASG", !Ref AppName, "DEV" ]]
+      VPCZoneIdentifier:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplateIdDEV
+        Version: 1
+      MinSize: 1
+      MaxSize: 3
+      DesiredCapacity: 1
+      TargetGroupARNs:
+        - !Ref TargetGrpDEV
+      Tags:
+        - Key: "Name"
+          Value: !Join [ "-",[!Ref AppName, "DEV" ]]
+          PropagateAtLaunch: true
+
+#------------------------------------------------------------------
+# QA  ListenerRule & AutoScalingGroup
+#------------------------------------------------------------------
+
+#------------------------------------------------------------------
+# PROD  ListenerRule & AutoScalingGroup
+#------------------------------------------------------------------
+  ListenerRuleProd:
+    Type: "AWS::ElasticLoadBalancingV2::ListenerRule"
+    Properties:
+      ListenerArn: !Ref HTTPSListener
+      Priority: 1
+      Conditions:
+        - Field: "host-header"
+          HostHeaderConfig:
+            Values: 
+              - !Join [ ".",[ !Ref SubDomainPROD, !Ref DomainName ]]
+      Actions:
+        - Type: "forward"
+          TargetGroupArn: !Ref TargetGrpPROD
+
+  AutoScalingGroupProd:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      AutoScalingGroupName: !Join [ "-",["ASG", !Ref AppName, "PROD" ]]
+      VPCZoneIdentifier:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplateIdPROD
+        Version: 1
+      MinSize: 1
+      MaxSize: 3
+      DesiredCapacity: 1
+      TargetGroupARNs:
+        - !Ref TargetGrpPROD
+      Tags:
+        - Key: "Name"
+          Value: !Join [ "-",[!Ref AppName, "PROD" ]]
+          PropagateAtLaunch: true
+        - Key: "Environment"
+          Value: "PROD"
+          PropagateAtLaunch: true
+
+Outputs:
+  HTTPSListener:
+    Description: The ARN of the HTTPS listener.
+    Value: !Ref HTTPSListener
+
+#------------------------------------------------------------------
+# DEV  ListenerRule & AutoScalingGrou
+#------------------------------------------------------------------
+  ListenerRuleDev:
+    Description: The ARN of the listener rule for the DEV environment.
+    Value: !Ref ListenerRuleDev
+
+  AutoScalingGroupDev:
+    Description: The ARN of the Auto Scaling group for the DEV environment.
+    Value: !Ref AutoScalingGroupDev
+
+#------------------------------------------------------------------
+# QA  Outputs (placeholder for future)
+#------------------------------------------------------------------
+
+#------------------------------------------------------------------
+# PROD  Outputs
+#------------------------------------------------------------------
+  ListenerRuleProd:
+    Description: The ARN of the listener rule for the PROD environment.
+    Value: !Ref ListenerRuleProd
+
+  AutoScalingGroupProd:
+    Description: The ARN of the Auto Scaling group for the PROD environment.
+    Value: !Ref AutoScalingGroupProd

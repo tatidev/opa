@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dry-Run Sync Payload Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .filter-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .filter-group input, .filter-group select {
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group input:focus, .filter-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: #e9ecef;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .stats-item {
+            text-align: center;
+        }
+
+        .stats-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .stats-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .payload-list {
+            padding: 30px;
+        }
+
+        .payload-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .payload-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .payload-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payload-header h3 {
+            font-size: 1.3em;
+            font-weight: 500;
+        }
+
+        .payload-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .payload-content {
+            padding: 20px;
+            display: none;
+        }
+
+        .payload-content.expanded {
+            display: block;
+        }
+
+        .json-viewer {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .payload-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #6c757d;
+            font-size: 1em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px;
+            color: #6c757d;
+        }
+
+        .no-data h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .expand-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .payload-item.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Sync Status Panel Styles */
+        .sync-status-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            color: white;
+            display: none;
+        }
+
+        .sync-status-panel.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sync-status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .sync-status-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sync-status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .sync-status-badge.pending {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .sync-status-badge.processing {
+            background: #17a2b8;
+            color: #fff;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-status-badge.completed {
+            background: #28a745;
+            color: #fff;
+        }
+
+        .sync-status-badge.failed {
+            background: #dc3545;
+            color: #fff;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .sync-status-body {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .sync-status-item {
+            background: rgba(255,255,255,0.15);
+            padding: 12px;
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+        }
+
+        .sync-status-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .sync-status-value {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .sync-error-message {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.5);
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+
+        .sync-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .sync-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -100% 0; }
+            100% { background-position: 100% 0; }
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .close {
+            font-size: 2em;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .delete-options {
+            display: grid;
+            gap: 25px;
+        }
+
+        .delete-option {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .delete-option.danger-zone {
+            background: #fff5f5;
+            border-left-color: #dc3545;
+            border: 2px solid #dc3545;
+        }
+
+        .delete-option h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 1.2em;
+        }
+
+        .delete-option p {
+            margin: 0 0 15px 0;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .delete-option input, .delete-option select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .delete-option button {
+            width: 100%;
+        }
+
+        .payload-delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .payload-delete-btn:hover {
+            background: #c82333;
+        }
+
+        @media (max-width: 768px) {
+            .filter-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .payload-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Dry-Run Sync Payload Viewer</h1>
+            <p>View and analyze actual JSON payloads from OPMS to NetSuite sync operations</p>
+        </div>
+
+        <div class="controls">
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label for="itemCode">Item Code</label>
+                    <input type="text" id="itemCode" placeholder="e.g., opmsAPI01">
+                </div>
+                <div class="filter-group">
+                    <label for="productName">Product Name</label>
+                    <input type="text" id="productName" placeholder="e.g., Como Linen PKL">
+                </div>
+                <div class="filter-group">
+                    <label for="vendorName">Vendor Name</label>
+                    <input type="text" id="vendorName" placeholder="e.g., Dekortex">
+                </div>
+                <div class="filter-group">
+                    <label for="syncType">Sync Type</label>
+                    <select id="syncType">
+                        <option value="">All Types</option>
+                        <option value="item_sync">Item Sync</option>
+                        <option value="product_sync">Product Sync</option>
+                        <option value="batch_sync">Batch Sync</option>
+                        <option value="manual_test">Manual Test</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" data-action="load-payloads">
+                    🔍 Search Payloads
+                </button>
+                <button class="btn btn-secondary" data-action="clear-filters">
+                    🗑️ Clear Filters
+                </button>
+                <button class="btn btn-success" data-action="run-dry-run">
+                    🧪 Run New Dry-Run
+                </button>
+                <button class="btn btn-danger" data-action="show-delete-options">
+                    🗑️ Delete Options
+                </button>
+                
+            </div>
+        </div>
+
+        <div class="stats-bar" id="statsBar" style="display: none;">
+            <div class="stats-item">
+                <div class="stats-number" id="totalPayloads">0</div>
+                <div class="stats-label">Total Payloads</div>
+            </div>
+            <div class="stats-item">
+                <div class="stats-number" id="avgSize">0</div>
+                <div class="stats-label">Avg Size (bytes)</div>
+            </div>
+            <div class="stats-item">
+                <div class="stats-number" id="avgFields">0</div>
+                <div class="stats-label">Avg Fields</div>
+            </div>
+            <div class="stats-item">
+                <div class="stats-number" id="successRate">0%</div>
+                <div class="stats-label">Success Rate</div>
+            </div>
+        </div>
+
+        <div class="payload-list" id="payloadList">
+            <!-- Payloads will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <!-- Delete Options Modal -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🗑️ Delete Dry-Run Payloads</h3>
+                <span class="close" data-action="hide-delete-options">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="delete-options">
+                    <div class="delete-option">
+                        <h4>Delete Individual Payload</h4>
+                        <p>Delete a specific payload by ID</p>
+                        <input type="number" id="deletePayloadId" placeholder="Payload ID" min="1">
+                        <button class="btn btn-danger" data-action="delete-by-id">Delete Payload</button>
+                    </div>
+                    
+                    <div class="delete-option">
+                        <h4>Delete by OPMS Item ID</h4>
+                        <p>Delete all payloads for a specific OPMS item</p>
+                        <input type="number" id="deleteOpmsItemId" placeholder="OPMS Item ID" min="1">
+                        <button class="btn btn-danger" data-action="delete-by-item-id">Delete by Item ID</button>
+                    </div>
+                    
+                    <div class="delete-option">
+                        <h4>Delete by Sync Type</h4>
+                        <p>Delete all payloads of a specific sync type</p>
+                        <select id="deleteSyncType">
+                            <option value="">Select Sync Type</option>
+                            <option value="item_sync">Item Sync</option>
+                            <option value="product_sync">Product Sync</option>
+                            <option value="batch_sync">Batch Sync</option>
+                            <option value="manual_test">Manual Test</option>
+                        </select>
+                        <button class="btn btn-danger" data-action="delete-by-sync-type">Delete by Type</button>
+                    </div>
+                    
+                    <div class="delete-option">
+                        <h4>Cleanup Old Payloads</h4>
+                        <p>Delete payloads older than specified days</p>
+                        <input type="number" id="cleanupDays" placeholder="Days old" min="1" value="30">
+                        <button class="btn btn-warning" data-action="cleanup-old">Cleanup Old</button>
+                    </div>
+                    
+                    <div class="delete-option danger-zone">
+                        <h4>⚠️ Danger Zone</h4>
+                        <p>Delete ALL dry-run payloads (use with extreme caution!)</p>
+                        <button class="btn btn-danger" data-action="delete-all">Delete ALL Payloads</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+        
+        // Application state
+        const state = {
+            allPayloads: [],
+            filteredPayloads: [],
+            isLoading: false
+        };
+        
+        // DOM elements cache
+        const elements = {};
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cache DOM elements
+            elements.payloadList = document.getElementById('payloadList');
+            elements.statsBar = document.getElementById('statsBar');
+            elements.itemCode = document.getElementById('itemCode');
+            elements.syncType = document.getElementById('syncType');
+            elements.productName = document.getElementById('productName');
+            elements.vendorName = document.getElementById('vendorName');
+            
+            // Load initial data
+            loadPayloads();
+            
+            // Set up event delegation for ALL interactive elements
+            document.addEventListener('click', function(event) {
+                // Ignore clicks on details/summary elements
+                if (event.target.closest('details, summary')) {
+                    return;
+                }
+                
+                // Handle payload item toggle (but ignore explicit action buttons)
+                const payloadItem = event.target.closest('.payload-item');
+                if (payloadItem && !event.target.closest('[data-action]') && !event.target.closest('.payload-delete-btn')) {
+                    const payloadId = payloadItem.getAttribute('data-payload-id');
+                    if (payloadId) {
+                        togglePayload(parseInt(payloadId));
+                        return;
+                    }
+                }
+                
+                const target = event.target.closest('button, .close');
+                if (!target) return;
+                
+                // Handle payload delete buttons (ignore if this is a special action button like cancel)
+                if (target.classList.contains('payload-delete-btn') && !target.getAttribute('data-action')) {
+                    event.stopPropagation();
+                    const payloadId = target.getAttribute('data-payload-id');
+                    if (payloadId) {
+                        deleteSinglePayload(parseInt(payloadId));
+                    }
+                    return;
+                }
+                
+                // Handle other buttons by data-action attribute
+                const action = target.getAttribute('data-action');
+                if (!action) return;
+                
+                event.preventDefault();
+                console.log(`Button clicked with action: ${action}`);
+                
+                switch(action) {
+                    case 'load-payloads':
+                        console.log('Loading payloads...');
+                        loadPayloads();
+                        break;
+                    case 'clear-filters':
+                        console.log('Clearing filters...');
+                        clearFilters();
+                        break;
+                    case 'run-dry-run':
+                        console.log('Running new dry-run...');
+                        runNewDryRun();
+                        break;
+                    case 'show-delete-options':
+                        showDeleteOptions();
+                        break;
+                    case 'live-prod-sync':
+                        startLiveProdSync(target.getAttribute('data-payload-id'));
+                        break;
+                    case 'cancel-live-sync':
+                        cancelLiveSync(target.getAttribute('data-payload-id'));
+                        break;
+                    case 'hide-delete-options':
+                        hideDeleteOptions();
+                        break;
+                    case 'delete-by-id':
+                        deletePayloadById();
+                        break;
+                    case 'delete-by-item-id':
+                        deletePayloadsByOpmsItemId();
+                        break;
+                    case 'delete-by-sync-type':
+                        deletePayloadsBySyncType();
+                        break;
+                    case 'cleanup-old':
+                        cleanupOldPayloads();
+                        break;
+                    case 'delete-all':
+                        confirmDeleteAll();
+                        break;
+                }
+            });
+        });
+
+        async function loadPayloads() {
+            if (state.isLoading) return; // Prevent concurrent loads
+            
+            state.isLoading = true;
+            renderLoadingState();
+
+            try {
+                const filters = {
+                    opmsItemCode: elements.itemCode?.value || '',
+                    syncType: elements.syncType?.value || ''
+                };
+
+                const queryParams = new URLSearchParams(
+                    Object.entries(filters).filter(([_, value]) => value)
+                );
+                queryParams.append('limit', '100');
+                queryParams.append('includePayload', 'true');
+
+                const response = await fetch(`/api/dry-run/payloads?${queryParams}`, {
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to load payloads');
+                }
+
+                state.allPayloads = result.data.payloads || [];
+                state.filteredPayloads = applyClientSideFilters(state.allPayloads);
+                
+                displayPayloads(state.filteredPayloads);
+                updateStats(state.filteredPayloads);
+            } catch (error) {
+                console.error('Error loading payloads:', error);
+                renderErrorState(error.message);
+            } finally {
+                state.isLoading = false;
+            }
+        }
+
+        
+        
+        function renderLoadingState() {
+            if (!elements.payloadList) return;
+            elements.payloadList.innerHTML = '<div class="loading"><h3>🔄 Loading payloads...</h3></div>';
+            if (elements.statsBar) elements.statsBar.style.display = 'none';
+        }
+        
+        function renderErrorState(message) {
+            if (!elements.payloadList) return;
+            elements.payloadList.innerHTML = `<div class="error"><strong>Error:</strong> ${message}</div>`;
+        }
+
+        function applyClientSideFilters(payloads) {
+            const productName = elements.productName?.value?.toLowerCase() || '';
+            const vendorName = elements.vendorName?.value?.toLowerCase() || '';
+            
+            console.log('🔍 Applying filters:', { productName, vendorName, totalPayloads: payloads.length });
+
+            const filtered = payloads.filter(payload => {
+                // actual_json_payload is already parsed by MySQL driver
+                const payloadData = payload.actual_json_payload || {};
+
+                // Check product name filter
+                if (productName && !payloadData.custitem_opms_parent_product_name?.toLowerCase().includes(productName)) {
+                    console.log('❌ Filtered out by product name:', payloadData.custitem_opms_parent_product_name, 'does not include', productName);
+                    return false;
+                }
+
+                // Check vendor name filter
+                if (vendorName && !payloadData.vendorName?.toLowerCase().includes(vendorName)) {
+                    console.log('❌ Filtered out by vendor name:', payloadData.vendorName, 'does not include', vendorName);
+                    return false;
+                }
+
+                return true;
+            });
+            
+            console.log('✅ Filtered results:', filtered.length, 'of', payloads.length);
+            return filtered;
+        }
+
+        /**
+         * Format JSON payload with grouped and color-coded fields
+         */
+        function formatGroupedPayload(payloadData) {
+            // Define vendor-related fields
+            const vendorFields = [
+                'vendor',
+                'vendorName',
+                'vendorcode',
+                'custitem_opms_vendor_prod_name',
+                'custitem_opms_vendor_color'
+            ];
+            
+            // Define NetSuite constants fields
+            const constantFields = [
+                'usebins',
+                'matchbilltoreceipt',
+                'custitem_aln_1_auto_numbered',
+                'unitstype',
+                'custitem_aln_2_number_format',
+                'custitem_aln_3_initial_sequence',
+                'taxScheduleId'
+            ];
+            
+            // Mini-Forms fields (RESTlet payload keys and NetSuite custom fields)
+            const miniFormFields = [
+                'frontContentJson',
+                'backContentJson',
+                'abrasionJson',
+                'firecodesJson',
+                'custitem_opms_front_content',
+                'custitem_opms_back_content',
+                'custitem_opms_abrasion',
+                'custitem_opms_firecodes'
+            ];
+            
+            // Rebuild object with grouped ordering (no section markers)
+            const orderedPayload = {};
+            
+            // 1. Add regular fields first
+            Object.keys(payloadData).forEach(key => {
+                if (!vendorFields.includes(key) && !constantFields.includes(key)) {
+                    orderedPayload[key] = payloadData[key];
+                }
+            });
+            
+            // 2. Add vendor fields (grouped together)
+            vendorFields.forEach(key => {
+                if (payloadData.hasOwnProperty(key)) {
+                    orderedPayload[key] = payloadData[key];
+                }
+            });
+            
+            // 3. Add constant fields (grouped together)
+            constantFields.forEach(key => {
+                if (payloadData.hasOwnProperty(key)) {
+                    orderedPayload[key] = payloadData[key];
+                }
+            });
+            
+            // Format as JSON
+            let jsonStr = JSON.stringify(orderedPayload, null, 2);
+            
+            // Apply syntax highlighting with custom colors
+            jsonStr = syntaxHighlightJson(jsonStr, vendorFields, constantFields, miniFormFields);
+            
+            return `<div class="json-viewer">${jsonStr}</div>`;
+        }
+        
+        /**
+         * Apply syntax highlighting to JSON
+         * Keys: Vendor fields = blue, Constants = orange, Others = light green
+         * Values: ALL white
+         */
+        function syntaxHighlightJson(json, vendorFields, constantFields, miniFormFields) {
+            // First, format description fields with actual line breaks
+            json = json.replace(/"(purchasedescription|salesdescription)": "([^"]*(?:\\.[^"]*)*)"/g, function(match, key, value) {
+                // Decode the escaped newlines and format for display
+                const decodedValue = value.replace(/\\n/g, '\n    ');
+                return `"${key}": "\n    ${decodedValue}\n  "`;
+            });
+            
+            // Syntax highlighting for JSON
+            json = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        // It's a key - apply color based on field type
+                        const key = match.slice(1, -2);
+                        
+                        // Mini-Forms fields = YELLOW-GREEN
+                        if (miniFormFields && miniFormFields.includes(key)) {
+                            return '<span style="color: #9acd32; font-weight: bold;">' + match + '</span>';
+                        }
+                        
+                        // Vendor fields = BLUE
+                        if (vendorFields.includes(key)) {
+                            return '<span style="color: #4facfe; font-weight: bold;">' + match + '</span>';
+                        }
+                        
+                        // Constants = ORANGE
+                        if (constantFields.includes(key)) {
+                            return '<span style="color: #ff9800; font-weight: bold;">' + match + '</span>';
+                        }
+                        
+                        // All other keys = LIGHT GREEN
+                        return '<span style="color: #90ee90;">' + match + '</span>';
+                    } else {
+                        // It's a value - ALL VALUES WHITE
+                        return '<span style="color: #ffffff;">' + match + '</span>';
+                    }
+                } else if (/true|false/.test(match)) {
+                    // Boolean values = WHITE
+                    return '<span style="color: #ffffff;">' + match + '</span>';
+                } else if (/null/.test(match)) {
+                    // Null values = WHITE
+                    return '<span style="color: #ffffff;">' + match + '</span>';
+                }
+                // Number values = WHITE
+                return '<span style="color: #ffffff;">' + match + '</span>';
+            });
+            
+            return json;
+        }
+        
+        /**
+         * Escape HTML characters
+         */
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function displayPayloads(payloads) {
+            console.log('📊 Displaying payloads:', payloads.length);
+            const payloadList = document.getElementById('payloadList');
+            
+            if (!payloadList) {
+                console.error('❌ payloadList element not found!');
+                return;
+            }
+
+            if (payloads.length === 0) {
+                console.log('📭 No payloads to display');
+                payloadList.innerHTML = `
+                    <div class="no-data">
+                        <h3>📭 No payloads found</h3>
+                        <p>Try adjusting your search criteria or run a new dry-run test.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const html = payloads.map(payload => {
+                // actual_json_payload is already parsed by MySQL driver
+                const payloadData = payload.actual_json_payload || {};
+
+                const createdDate = new Date(payload.created_at).toLocaleString();
+                const payloadSizeKB = (payload.payload_size_bytes / 1024).toFixed(1);
+
+                return `
+                    <div class="payload-item" data-payload-id="${payload.id}" data-opms-item-id="${payload.opms_item_id || ''}" data-opms-item-code="${payload.opms_item_code || ''}">
+                        <div class="payload-header">
+                            <div>
+                                <h3>${payload.opms_item_code || 'Unknown Code'}</h3>
+                                <div class="payload-meta">
+                                    <span>📦 ${payloadData.custitem_opms_parent_product_name || 'Unknown Product'}</span>
+                                    <span>🏢 ${payloadData.vendorName || 'No Vendor'}</span>
+                                    <span>📅 ${createdDate}</span>
+                                    <span>📊 ${payload.field_count} fields</span>
+                                    <span>💾 ${payloadSizeKB} KB</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <button class="btn btn-warning" data-action="live-prod-sync" data-payload-id="${payload.id}" title="Send this item to NetSuite Production now">🚀 Live Production Sync</button>
+                                <button class="payload-delete-btn" data-action="cancel-live-sync" data-payload-id="${payload.id}" style="display:none;" title="Cancel pending live sync">✖ Cancel Live Sync</button>
+                                <button class="payload-delete-btn" data-payload-id="${payload.id}" title="Delete this payload">🗑️ Delete</button>
+                                <div class="expand-icon">▼</div>
+                            </div>
+                        </div>
+                        <div class="payload-content" id="content-${payload.id}">
+                            <div class="payload-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">OPMS Item ID</div>
+                                    <div class="detail-value">${payload.opms_item_id}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">OPMS Product ID</div>
+                                    <div class="detail-value">${payload.opms_product_id}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Sync Type</div>
+                                    <div class="detail-value">${payload.sync_type}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Sync Trigger</div>
+                                    <div class="detail-value">${payload.sync_trigger || 'N/A'}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Validation Status</div>
+                                    <div class="detail-value">${payload.validation_status}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Payload Size</div>
+                                    <div class="detail-value">${payload.payload_size_bytes} bytes</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sync Status Panel -->
+                            <div class="sync-status-panel" id="sync-status-${payload.id}">
+                                <div class="sync-status-header">
+                                    <div class="sync-status-title">
+                                        <span>🔄</span>
+                                        <span>Live Sync Status</span>
+                                    </div>
+                                    <div class="sync-status-badge pending" id="status-badge-${payload.id}">PENDING</div>
+                                </div>
+                                <div class="sync-status-body">
+                                    <div class="sync-status-item">
+                                        <div class="sync-status-label">Job ID</div>
+                                        <div class="sync-status-value" id="job-id-${payload.id}">-</div>
+                                    </div>
+                                    <div class="sync-status-item">
+                                        <div class="sync-status-label">Started</div>
+                                        <div class="sync-status-value" id="job-started-${payload.id}">-</div>
+                                    </div>
+                                    <div class="sync-status-item">
+                                        <div class="sync-status-label">Duration</div>
+                                        <div class="sync-status-value" id="job-duration-${payload.id}">-</div>
+                                    </div>
+                                    <div class="sync-status-item">
+                                        <div class="sync-status-label">Retry Count</div>
+                                        <div class="sync-status-value" id="job-retries-${payload.id}">0</div>
+                                    </div>
+                                </div>
+                                <div class="sync-error-message" id="job-error-${payload.id}" style="display:none;"></div>
+                            </div>
+                            
+                            ${payload.simulated_restlet_response ? `
+                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 8px; margin: 20px 0;">
+                                    <h4 style="margin: 0 0 10px 0; color: white; display: flex; align-items: center; gap: 10px;">
+                                        🤖 Simulated RESTlet Validation
+                                        ${payload.would_succeed ? 
+                                            '<span style="background: #28a745; padding: 4px 12px; border-radius: 4px; font-size: 12px;">✅ WOULD SUCCEED</span>' : 
+                                            '<span style="background: #dc3545; padding: 4px 12px; border-radius: 4px; font-size: 12px;">❌ WOULD FAIL</span>'
+                                        }
+                                    </h4>
+                                    <p style="color: #ffeaa7; margin: 0 0 15px 0; font-size: 13px;">
+                                        ⚠️ SIMULATION ONLY - Real NetSuite may behave differently
+                                    </p>
+                                    ${payload.simulated_errors ? `
+                                        <div style="background: rgba(220, 53, 69, 0.2); border-left: 4px solid #dc3545; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+                                            <strong style="color: #ff6b6b;">Validation Errors:</strong>
+                                            <div style="color: #ffe66d; margin-top: 5px;">${payload.simulated_errors}</div>
+                                        </div>
+                                    ` : ''}
+                                    <details style="margin-top: 10px;">
+                                        <summary style="cursor: pointer; color: white; font-weight: bold; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                                            📊 Validation Checks (${Array.isArray(payload.simulated_validation_results) ? payload.simulated_validation_results.length : 0})
+                                        </summary>
+                                        <div class="json-viewer" style="margin-top: 10px; background: rgba(255,255,255,0.1);">
+                                            ${JSON.stringify(payload.simulated_validation_results || [], null, 2)}
+                                        </div>
+                                    </details>
+                                    <details style="margin-top: 10px;">
+                                        <summary style="cursor: pointer; color: white; font-weight: bold; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                                            💬 Mock RESTlet Response
+                                        </summary>
+                                        <div class="json-viewer" style="margin-top: 10px; background: rgba(255,255,255,0.1);">
+                                            ${JSON.stringify(payload.simulated_restlet_response || {}, null, 2)}
+                                        </div>
+                                    </details>
+                                </div>
+                            ` : ''}
+                            <h4 style="margin-bottom: 15px; color: #495057;">📄 Complete JSON Payload:</h4>
+                            ${formatGroupedPayload(payloadData)}
+                        </div>
+                    </div>
+                `;
+                }).join('');
+
+                payloadList.innerHTML = html;
+                console.log('✅ Rendered', payloads.length, 'payloads');
+                console.log('📐 Payload list HTML length:', html.length);
+                console.log('📍 Payload list element:', payloadList);
+                
+            } catch (renderError) {
+                console.error('❌ Error rendering payloads:', renderError);
+                payloadList.innerHTML = `<div class="error"><strong>Render Error:</strong> ${renderError.message}</div>`;
+            }
+        }
+
+        function togglePayload(payloadId) {
+            const content = document.getElementById(`content-${payloadId}`);
+            const item = content.closest('.payload-item');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                item.classList.remove('expanded');
+            } else {
+                content.classList.add('expanded');
+                item.classList.add('expanded');
+            }
+        }
+
+        function updateStats(payloads) {
+            console.log('📈 Updating stats for', payloads.length, 'payloads');
+            const statsBar = elements.statsBar || document.getElementById('statsBar');
+            const totalPayloads = document.getElementById('totalPayloads');
+            const avgSize = document.getElementById('avgSize');
+            const avgFields = document.getElementById('avgFields');
+            const successRate = document.getElementById('successRate');
+
+            if (!statsBar) {
+                console.warn('⚠️ statsBar element not found');
+                return;
+            }
+
+            if (payloads.length === 0) {
+                statsBar.style.display = 'none';
+                console.log('📉 Hiding stats bar (no payloads)');
+                return;
+            }
+
+            const total = payloads.length;
+            const avgSizeBytes = Math.round(payloads.reduce((sum, p) => sum + p.payload_size_bytes, 0) / total);
+            const avgFieldCount = Math.round(payloads.reduce((sum, p) => sum + p.field_count, 0) / total);
+            const successCount = payloads.filter(p => p.validation_status === 'passed').length;
+            const successPercentage = Math.round((successCount / total) * 100);
+
+            if (totalPayloads) totalPayloads.textContent = total;
+            if (avgSize) avgSize.textContent = avgSizeBytes;
+            if (avgFields) avgFields.textContent = avgFieldCount;
+            if (successRate) successRate.textContent = `${successPercentage}%`;
+
+            statsBar.style.display = 'flex';
+            console.log('📊 Stats bar displayed');
+        }
+
+        function clearFilters() {
+            document.getElementById('itemCode').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('vendorName').value = '';
+            document.getElementById('syncType').value = '';
+            loadPayloads();
+        }
+
+        async function runNewDryRun() {
+            try {
+                // Check all possible search fields
+                const itemCode = elements.itemCode?.value?.trim();
+                const productName = elements.productName?.value?.trim();
+                const vendorName = elements.vendorName?.value?.trim();
+                
+                const searchValue = itemCode || productName || vendorName;
+                
+                if (!searchValue) {
+                    alert('⚠️ Please enter an Item Code, Product Name, or Vendor Name to run a dry-run');
+                    return;
+                }
+                
+                console.log('🧪 Starting dry-run for search:', searchValue);
+                
+                // Use the by-code endpoint (works for item code, product name, vendor name)
+                const response = await fetch('/api/dry-run/sync/by-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        itemCode: searchValue,
+                        syncType: 'manual_test',
+                        syncTrigger: 'web_interface',
+                        storePayload: true
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('Dry-run result:', result);
+                
+                if (result.success) {
+                    const totalItems = result.data?.totalItems || 1;
+                    const successCount = result.data?.successfulItems || 1;
+                    const failCount = result.data?.failedItems || 0;
+                    
+                    console.log(`✅ Dry-run completed: ${successCount}/${totalItems} items succeeded`);
+                    
+                    if (failCount > 0) {
+                        console.warn('⚠️ Some items failed:', result.data.errors);
+                    }
+                    
+                    // Clear all filters so the new payloads are visible
+                    if (elements.itemCode) elements.itemCode.value = '';
+                    if (elements.productName) elements.productName.value = '';
+                    if (elements.vendorName) elements.vendorName.value = '';
+                    if (elements.syncType) elements.syncType.value = '';
+                    
+                    await loadPayloads();
+                    console.log(`✅ Created ${successCount} dry-run payload(s)`);
+                } else {
+                    console.error('Dry-run failed:', result.message);
+                    alert(`❌ Dry-run failed: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error in runNewDryRun:', error);
+                alert(`❌ Error running dry-run: ${error.message}`);
+            }
+        }
+
+        // Add real-time filtering
+        if (elements.productName) {
+            elements.productName.addEventListener('input', function() {
+                state.filteredPayloads = applyClientSideFilters(state.allPayloads);
+                displayPayloads(state.filteredPayloads);
+                updateStats(state.filteredPayloads);
+            });
+        }
+
+        if (elements.vendorName) {
+            elements.vendorName.addEventListener('input', function() {
+                state.filteredPayloads = applyClientSideFilters(state.allPayloads);
+                displayPayloads(state.filteredPayloads);
+                updateStats(state.filteredPayloads);
+            });
+        }
+
+        // Delete functionality
+        function showDeleteOptions() {
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        function hideDeleteOptions() {
+            document.getElementById('deleteModal').style.display = 'none';
+        }
+
+        async function deleteSinglePayload(payloadId) {
+            if (!confirm(`Are you sure you want to delete payload #${payloadId}?`)) {
+                return;
+            }
+
+            try {
+                console.log(`🗑️ Deleting payload #${payloadId}...`);
+                
+                const response = await fetch(`/api/dry-run/payloads/${payloadId}`, {
+                    method: 'DELETE',
+                    cache: 'no-cache'
+                });
+
+                const result = await response.json();
+                console.log('Delete response:', result);
+                
+                if (result.success) {
+                    console.log(`✅ Payload #${payloadId} deleted successfully, refreshing list...`);
+                    await loadPayloads();
+                    console.log('✅ List refreshed');
+                } else {
+                    console.error('Delete failed:', result.message);
+                    alert(`❌ Failed to delete payload: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert(`❌ Error deleting payload: ${error.message}`);
+            }
+        }
+
+        async function deletePayloadById() {
+            const payloadId = document.getElementById('deletePayloadId').value;
+            
+            if (!payloadId || isNaN(payloadId) || payloadId <= 0) {
+                alert('Please enter a valid payload ID');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete payload #${payloadId}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/dry-run/payloads/${payloadId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Payload deleted successfully!');
+                    document.getElementById('deletePayloadId').value = '';
+                    hideDeleteOptions();
+                    loadPayloads();
+                } else {
+                    alert(`❌ Failed to delete payload: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`❌ Error deleting payload: ${error.message}`);
+            }
+        }
+
+        async function deletePayloadsByOpmsItemId() {
+            const opmsItemId = document.getElementById('deleteOpmsItemId').value;
+            
+            if (!opmsItemId || isNaN(opmsItemId) || opmsItemId <= 0) {
+                alert('Please enter a valid OPMS item ID');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ALL payloads for OPMS item ID ${opmsItemId}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/dry-run/payloads/by-item/${opmsItemId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Deleted ${result.data.deletedCount} payload(s) for OPMS item ID ${opmsItemId}!`);
+                    document.getElementById('deleteOpmsItemId').value = '';
+                    hideDeleteOptions();
+                    loadPayloads();
+                } else {
+                    alert(`❌ Failed to delete payloads: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`❌ Error deleting payloads: ${error.message}`);
+            }
+        }
+
+        async function deletePayloadsBySyncType() {
+            const syncType = document.getElementById('deleteSyncType').value;
+            
+            if (!syncType) {
+                alert('Please select a sync type');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ALL payloads of type '${syncType}'?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/dry-run/payloads/by-type/${syncType}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Deleted ${result.data.deletedCount} payload(s) of type '${syncType}'!`);
+                    document.getElementById('deleteSyncType').value = '';
+                    hideDeleteOptions();
+                    loadPayloads();
+                } else {
+                    alert(`❌ Failed to delete payloads: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`❌ Error deleting payloads: ${error.message}`);
+            }
+        }
+
+        async function cleanupOldPayloads() {
+            const daysOld = document.getElementById('cleanupDays').value;
+            
+            if (!daysOld || isNaN(daysOld) || daysOld < 1) {
+                alert('Please enter a valid number of days (minimum 1)');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ALL payloads older than ${daysOld} days?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/dry-run/payloads/cleanup?days=${daysOld}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Cleaned up ${result.data.deletedCount} payload(s) older than ${daysOld} days!`);
+                    hideDeleteOptions();
+                    loadPayloads();
+                } else {
+                    alert(`❌ Failed to cleanup payloads: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`❌ Error cleaning up payloads: ${error.message}`);
+            }
+        }
+
+        function confirmDeleteAll() {
+            if (!confirm('⚠️ WARNING: This will delete ALL dry-run payloads!\n\nThis action cannot be undone.\n\nAre you absolutely sure?')) {
+                return;
+            }
+
+            if (!confirm('⚠️ FINAL CONFIRMATION: You are about to delete ALL dry-run payloads!\n\nType "DELETE ALL" to confirm (case sensitive):')) {
+                return;
+            }
+
+            const confirmation = prompt('Type "DELETE ALL" to confirm:');
+            if (confirmation !== 'DELETE ALL') {
+                alert('❌ Confirmation text does not match. Operation cancelled.');
+                return;
+            }
+
+            deleteAllPayloads();
+        }
+
+        async function deleteAllPayloads() {
+            try {
+                const response = await fetch('/api/dry-run/payloads/all', {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Deleted ALL ${result.data.deletedCount} payload(s)!`);
+                    hideDeleteOptions();
+                    loadPayloads();
+                } else {
+                    alert(`❌ Failed to delete all payloads: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`❌ Error deleting all payloads: ${error.message}`);
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                hideDeleteOptions();
+            }
+        }
+
+        const liveJobs = new Map();
+        const activePolls = new Map(); // Track active polling intervals
+
+        async function startLiveProdSync(payloadId) {
+            try {
+                const card = document.querySelector(`.payload-item[data-payload-id="${payloadId}"]`);
+                if (!card) return alert('Card not found');
+                const itemId = parseInt(card.getAttribute('data-opms-item-id'));
+                const itemCode = card.getAttribute('data-opms-item-code');
+                const reason = 'Dry-run viewer live production sync';
+                const queueBtn = document.querySelector(`button[data-action="live-prod-sync"][data-payload-id="${payloadId}"]`);
+                const cancelBtn = document.querySelector(`button[data-action="cancel-live-sync"][data-payload-id="${payloadId}"]`);
+                if (queueBtn) { queueBtn.disabled = true; queueBtn.textContent = '⏳ Queuing…'; }
+
+                let resp;
+                if (itemId && !isNaN(itemId)) {
+                    resp = await fetch('/api/opms-sync/trigger-item', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ itemId, source: 'dry-run-viewer', reason, env: 'prod' })
+                    });
+                } else if (itemCode) {
+                    resp = await fetch('/api/opms-sync/trigger-item-by-code', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ itemCode, source: 'dry-run-viewer', reason, env: 'prod' })
+                    });
+                } else {
+                    throw new Error('Missing OPMS item id/code on payload');
+                }
+
+                const data = await resp.json();
+                if (!resp.ok || !data.success) {
+                    throw new Error(data.message || data.error || `HTTP ${resp.status}`);
+                }
+
+                const jobId = data.data?.syncJob?.id || data.data?.jobId || data.jobId;
+                if (jobId) {
+                    liveJobs.set(String(payloadId), jobId);
+                    if (cancelBtn) { cancelBtn.style.display = 'inline-block'; }
+                    
+                    // Show status panel and start polling
+                    showSyncStatusPanel(payloadId, jobId);
+                    startPollingJobStatus(payloadId, jobId);
+                }
+                if (queueBtn) { queueBtn.textContent = '✓ Queued'; queueBtn.style.background = '#198754'; }
+            } catch (e) {
+                alert('Live sync failed to queue: ' + e.message);
+                const queueBtn = document.querySelector(`button[data-action="live-prod-sync"][data-payload-id="${payloadId}"]`);
+                if (queueBtn) { queueBtn.disabled = false; queueBtn.textContent = '🚀 Live Production Sync'; queueBtn.style.background = ''; }
+            }
+        }
+
+        function showSyncStatusPanel(payloadId, jobId) {
+            const panel = document.getElementById(`sync-status-${payloadId}`);
+            const jobIdEl = document.getElementById(`job-id-${payloadId}`);
+            
+            if (panel) {
+                panel.classList.add('active');
+                if (jobIdEl) jobIdEl.textContent = jobId;
+            }
+        }
+
+        function hideSyncStatusPanel(payloadId) {
+            const panel = document.getElementById(`sync-status-${payloadId}`);
+            if (panel) panel.classList.remove('active');
+        }
+
+        async function pollJobStatus(payloadId, jobId) {
+            try {
+                const resp = await fetch(`/api/opms-sync/job-status/${jobId}`);
+                if (!resp.ok) {
+                    console.error('Failed to fetch job status:', resp.status);
+                    return null;
+                }
+                
+                const data = await resp.json();
+                if (data.success && data.data) {
+                    updateSyncStatusUI(payloadId, data.data);
+                    return data.data;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error polling job status:', error);
+                return null;
+            }
+        }
+
+        function startPollingJobStatus(payloadId, jobId) {
+            // Clear any existing poll for this payload
+            stopPollingJobStatus(payloadId);
+            
+            // Poll every 2 seconds
+            const intervalId = setInterval(async () => {
+                const jobData = await pollJobStatus(payloadId, jobId);
+                
+                // Stop polling if job is complete or failed
+                if (jobData && (jobData.status === 'COMPLETED' || jobData.status === 'FAILED')) {
+                    stopPollingJobStatus(payloadId);
+                    
+                    // Update button states
+                    const queueBtn = document.querySelector(`button[data-action="live-prod-sync"][data-payload-id="${payloadId}"]`);
+                    const cancelBtn = document.querySelector(`button[data-action="cancel-live-sync"][data-payload-id="${payloadId}"]`);
+                    
+                    if (cancelBtn) cancelBtn.style.display = 'none';
+                    if (queueBtn) {
+                        queueBtn.disabled = false;
+                        queueBtn.textContent = jobData.status === 'COMPLETED' ? '✅ Synced' : '❌ Failed';
+                        queueBtn.style.background = jobData.status === 'COMPLETED' ? '#28a745' : '#dc3545';
+                    }
+                }
+            }, 2000);
+            
+            activePolls.set(String(payloadId), intervalId);
+        }
+
+        function stopPollingJobStatus(payloadId) {
+            const intervalId = activePolls.get(String(payloadId));
+            if (intervalId) {
+                clearInterval(intervalId);
+                activePolls.delete(String(payloadId));
+            }
+        }
+
+        function updateSyncStatusUI(payloadId, jobData) {
+            // Update status badge
+            const badge = document.getElementById(`status-badge-${payloadId}`);
+            if (badge) {
+                badge.textContent = jobData.status;
+                badge.className = 'sync-status-badge ' + jobData.status.toLowerCase();
+            }
+            
+            // Update started time
+            const startedEl = document.getElementById(`job-started-${payloadId}`);
+            if (startedEl && jobData.started_at) {
+                const startTime = new Date(jobData.started_at);
+                startedEl.textContent = startTime.toLocaleTimeString();
+            }
+            
+            // Update duration
+            const durationEl = document.getElementById(`job-duration-${payloadId}`);
+            if (durationEl && jobData.duration_ms) {
+                const seconds = (jobData.duration_ms / 1000).toFixed(1);
+                durationEl.textContent = `${seconds}s`;
+            } else if (durationEl && jobData.started_at) {
+                // Calculate running duration
+                const startTime = new Date(jobData.started_at);
+                const now = new Date();
+                const runningSeconds = ((now - startTime) / 1000).toFixed(1);
+                durationEl.textContent = `${runningSeconds}s`;
+            }
+            
+            // Update retry count
+            const retriesEl = document.getElementById(`job-retries-${payloadId}`);
+            if (retriesEl) {
+                retriesEl.textContent = jobData.retry_count || 0;
+            }
+            
+            // Show error if failed
+            const errorEl = document.getElementById(`job-error-${payloadId}`);
+            if (errorEl) {
+                if (jobData.status === 'FAILED' && jobData.error_message) {
+                    errorEl.textContent = `❌ Error: ${jobData.error_message}`;
+                    errorEl.style.display = 'block';
+                } else {
+                    errorEl.style.display = 'none';
+                }
+            }
+        }
+
+        async function cancelLiveSync(payloadId) {
+            try {
+                const jobId = liveJobs.get(String(payloadId));
+                if (!jobId) {
+                    return alert('No pending job tracked for this payload. It may have already started.');
+                }
+                const btn = document.querySelector(`button[data-action="cancel-live-sync"][data-payload-id="${payloadId}"]`);
+                if (btn) { btn.disabled = true; btn.textContent = '⏳ Cancelling…'; }
+                const resp = await fetch('/api/opms-sync/cancel-job', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jobId })
+                });
+                const data = await resp.json();
+                if (resp.status === 409) {
+                    alert('Job is no longer pending and could not be cancelled.');
+                } else if (!resp.ok || !data.success) {
+                    throw new Error(data.message || data.error || `HTTP ${resp.status}`);
+                } else {
+                    alert(`Cancelled job ${jobId}`);
+                    liveJobs.delete(String(payloadId));
+                    stopPollingJobStatus(payloadId);
+                    hideSyncStatusPanel(payloadId);
+                    if (btn) { btn.style.display = 'none'; btn.disabled = false; btn.textContent = '✖ Cancel Live Sync'; }
+                    const queueBtn = document.querySelector(`button[data-action="live-prod-sync"][data-payload-id="${payloadId}"]`);
+                    if (queueBtn) { queueBtn.disabled = false; queueBtn.textContent = '🚀 Live Production Sync'; queueBtn.style.background = ''; }
+                }
+            } catch (e) {
+                alert('Failed to cancel job: ' + e.message);
+                const btn = document.querySelector(`button[data-action="cancel-live-sync"][data-payload-id="${payloadId}"]`);
+                if (btn) { btn.disabled = false; btn.textContent = '✖ Cancel Live Sync'; }
+            }
+        }
+    </script>
+</body>
+</html>

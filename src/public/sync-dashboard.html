@@ -1,0 +1,2436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synchronization Report - OPMS ↔ NetSuite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --success: #48bb78;
+            --warning: #ed8936;
+            --danger: #f56565;
+            --dark: #2d3748;
+            --light: #f7fafc;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --tab-active: #667eea;
+            --tab-inactive: #cbd5e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px var(--shadow);
+        }
+
+        .header h1 {
+            color: var(--dark);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .header .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 16px;
+            padding: 4px 12px;
+            background: var(--success);
+            color: white;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .header .sync-status.degraded {
+            background: var(--warning);
+        }
+
+        .header .sync-status.offline {
+            background: var(--danger);
+        }
+
+        .sync-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            background: white;
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px var(--shadow);
+            display: flex;
+            gap: 8px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background: #f7fafc;
+        }
+
+        .tab-button.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 4px var(--shadow);
+        }
+
+        .tab-button .tab-badge {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 11px;
+        }
+
+        .tab-button.active .tab-badge {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px var(--shadow);
+        }
+
+        .metric-card .metric-label {
+            color: #718096;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-card .metric-value {
+            color: var(--dark);
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .metric-card .metric-subtitle {
+            color: #a0aec0;
+            font-size: 12px;
+        }
+
+        .metric-card.success .metric-value {
+            color: var(--success);
+        }
+
+        .metric-card.warning .metric-value {
+            color: var(--warning);
+        }
+
+        .metric-card.danger .metric-value {
+            color: var(--danger);
+        }
+
+        .content-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px var(--shadow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-header h2 {
+            color: var(--dark);
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .refresh-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .refresh-btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+
+        .update-list {
+            list-style: none;
+        }
+
+        .update-item {
+            padding: 12px 16px;
+            border-left: 4px solid var(--primary);
+            background: #f7fafc;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+
+        .update-item:hover {
+            background: #edf2f7;
+        }
+
+        .update-item.FAILED, .update-item.failed {
+            border-left-color: var(--danger);
+        }
+
+        .update-item.PENDING, .update-item.pending {
+            border-left-color: var(--warning);
+        }
+
+        .update-item.PROCESSING, .update-item.processing {
+            border-left-color: var(--primary);
+        }
+
+        .update-item.skipped {
+            border-left-color: var(--warning);
+        }
+
+        .update-item .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .update-item .item-code {
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        .update-item .item-product-inline {
+            color: #718096;
+            font-size: 13px;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+
+        .update-item .item-time {
+            color: #a0aec0;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .update-item .item-details {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 8px;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px 24px;
+            font-size: 12px;
+        }
+
+        .pricing-item {
+            display: flex;
+            align-items: center;
+            padding: 2px 0;
+            gap: 8px;
+        }
+
+        .pricing-label {
+            color: #718096;
+            font-weight: 600;
+            flex-shrink: 0;
+            min-width: fit-content;
+        }
+
+        .pricing-value {
+            color: var(--dark);
+            font-weight: 700;
+        }
+
+        .pricing-value.unchanged {
+            color: #3182ce;
+            font-weight: 600;
+        }
+
+        .pricing-change-box {
+            display: inline-block;
+            background: #fef3c7;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #fbbf24;
+        }
+
+        .price-old {
+            color: #4a5568;
+            text-decoration: line-through;
+            margin-right: 8px;
+            font-weight: 500;
+        }
+
+        .price-new {
+            color: #047857;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-badge.completed, .status-badge.COMPLETED {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-badge.running, .status-badge.PROCESSING {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .status-badge.failed, .status-badge.FAILED {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-badge.pending, .status-badge.PENDING {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+
+        .status-badge.skipped {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: #a0aec0;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .auto-refresh input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stats-item {
+            text-align: center;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .stats-item .label {
+            font-size: 11px;
+            color: #718096;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .stats-item .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .info-box {
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .info-box ul {
+            color: #718096;
+            line-height: 1.6;
+            padding-left: 20px;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 11px;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        /* Table styling */
+        #opms-sync-table thead th {
+            user-select: none;
+            position: relative;
+        }
+
+        #opms-sync-table thead th:hover {
+            background: #edf2f7 !important;
+        }
+
+        #opms-sync-table tbody tr:hover {
+            background: #f7fafc !important;
+        }
+
+        #opms-sync-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        /* Status badge colors */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.completed {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-badge.failed {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-badge.pending {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+
+        .status-badge.processing {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        /* Pagination buttons */
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 13px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>
+                        Synchronization Report
+                        <span class="sync-status" id="syncStatus">Live</span>
+                    </h1>
+                    <p class="subtitle">OPMS ↔ NetSuite bidirectional data synchronization monitoring</p>
+                </div>
+                <div class="auto-refresh">
+                    <input type="checkbox" id="autoRefresh" checked>
+                    <label for="autoRefresh">Auto-refresh (10s)</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="opms-to-netsuite">
+                📤 OPMS → NetSuite
+                <span class="tab-badge" id="opmsToNsCount">--</span>
+            </button>
+            <button class="tab-button" data-tab="netsuite-to-opms">
+                📥 NetSuite → OPMS
+                <span class="tab-badge" id="nsToOpmsCount">--</span>
+            </button>
+        </div>
+
+        <!-- Tab Content: OPMS → NetSuite -->
+        <div class="tab-content active" id="opms-to-netsuite">
+            <!-- Control Buttons Row -->
+            <div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <!-- Sync Enable/Disable Toggle -->
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <span style="font-size: 13px; color: #4b5563; font-weight: 600;">Sync:</span>
+                    <button onclick="toggleSync()" id="syncToggleBtn" style="padding: 6px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; min-width: 100px;">
+                        <span id="syncToggleText">Loading...</span>
+                    </button>
+                </div>
+                
+                <!-- Batch Re-Sync Trigger Button -->
+                <button onclick="toggleBatchResyncModal()" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;">
+                    ⚡ Batch Re-Sync
+                    <span id="batchModalStatus" style="margin-left: 12px; padding: 4px 12px; background: rgba(255,255,255,0.2); border-radius: 12px; font-size: 12px;">Ready</span>
+                </button>
+                
+                <!-- Clear Inactive Syncs Button -->
+                <button onclick="clearInactiveSyncs(false)" style="padding: 12px 24px; background: #f56565; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;" title="Clear old PENDING and FAILED sync jobs older than 24 hours from queue">
+                    🗑️ Clear Old
+                </button>
+                
+                <!-- Clear ALL Inactive Syncs Button -->
+                <button onclick="clearInactiveSyncs(true)" style="padding: 12px 24px; background: #dc2626; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;" title="Clear ALL PENDING and FAILED sync jobs regardless of age (use for stuck/dead items)">
+                    💀 Clear All Dead
+                </button>
+                
+                <!-- Individual Item Sync by Code -->
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <span style="font-size: 13px; color: #4b5563; font-weight: 600;">Sync Item:</span>
+                    <input type="text" id="itemCodeInput" placeholder="Enter item code (e.g., 1234-5678)" style="padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; width: 200px; outline: none; transition: border-color 0.2s;" onkeypress="if(event.key==='Enter') syncItemByCode()">
+                    <button onclick="syncItemByCode()" id="syncItemBtn" style="padding: 6px 16px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; min-width: 80px;">
+                        🔄 Sync
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Modal Overlay -->
+            <div id="batchResyncModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center;">
+                <!-- Modal Content -->
+                <div style="background: white; border-radius: 12px; padding: 0; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                    <!-- Modal Header -->
+                    <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%); padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="margin: 0; color: white; font-size: 18px;">⚡ Batch Re-Sync Control</h2>
+                        <button onclick="toggleBatchResyncModal()" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+                            ✕
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div style="padding: 24px;">
+                        <div style="margin-bottom: 20px;">
+                            <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
+                                Re-syncs all items with format <strong>"nnnn-nnnn"</strong> and vendor data to NetSuite. This operation may take several minutes.
+                            </p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                            <button class="btn btn-primary" onclick="triggerBatchResync()" id="batchResyncBtn" style="flex: 1;">
+                                🚀 Start Batch Re-Sync
+                            </button>
+                            <button class="btn btn-danger" onclick="stopBatchResync()" id="stopBatchBtn" disabled style="flex: 1;">
+                                🛑 Stop Batch Re-Sync
+                            </button>
+                        </div>
+
+                        <!-- Status Display -->
+                        <div id="batchStatus" style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+                            <div style="font-weight: 600; color: #2d3748; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 18px;">📊</span>
+                                Status
+                            </div>
+                            <div style="color: #4b5563; font-size: 14px;">
+                                <div style="margin-bottom: 8px;">
+                                    <strong>State:</strong> <span id="batchStatusText" style="color: #059669;">Ready</span>
+                                </div>
+                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                                    <strong>Progress:</strong> <span id="batchProgress" style="color: #6b7280;">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Syncs (24h)</div>
+                    <div class="metric-value" id="opms-totalJobs">--</div>
+                    <div class="metric-subtitle">Sync operations</div>
+                </div>
+
+                <div class="metric-card success">
+                    <div class="metric-label">Success Rate</div>
+                    <div class="metric-value" id="opms-successRate">--</div>
+                    <div class="metric-subtitle">Last 24 hours</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Items Synced</div>
+                    <div class="metric-value" id="opms-completedJobs">--</div>
+                    <div class="metric-subtitle">Successfully sent to NetSuite</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Avg Duration</div>
+                    <div class="metric-value" id="opms-avgDuration">--</div>
+                    <div class="metric-subtitle">Seconds per sync</div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Recent Updates -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Recent OPMS → NetSuite Syncs</h2>
+                        <button class="refresh-btn" onclick="refreshOpmsToNetSuite()">
+                            <span id="opms-refreshIcon">↻ Refresh</span>
+                        </button>
+                    </div>
+
+                    <!-- Search and Filter Controls -->
+                    <div style="padding: 16px; background: #f7fafc; border-bottom: 1px solid #e2e8f0;">
+                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 300px;">
+                                <input 
+                                    type="text" 
+                                    id="opms-search-input" 
+                                    placeholder="🔍 Search by product name, item code, or status..." 
+                                    style="width: 100%; padding: 10px 16px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;"
+                                    onfocus="this.style.borderColor='#667eea'"
+                                    onblur="this.style.borderColor='#cbd5e0'"
+                                />
+                            </div>
+                            <button class="btn" onclick="clearOpmsSearch()" style="padding: 10px 20px; background: #e2e8f0; color: #4a5568;">
+                                ✖ Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table with sorting and pagination -->
+                    <div style="overflow-x: auto;">
+                        <table id="opms-sync-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
+                                    <th style="padding: 12px; text-align: left; cursor: pointer;" onclick="changeOpmsSort('item_code')" id="sort-header-item_code">
+                                        Item Code <span class="sort-indicator"></span>
+                                    </th>
+                                    <th style="padding: 12px; text-align: left; cursor: pointer;" onclick="changeOpmsSort('product_name')" id="sort-header-product_name">
+                                        Product <span class="sort-indicator"></span>
+                                    </th>
+                                    <th style="padding: 12px; text-align: left; cursor: pointer;" onclick="changeOpmsSort('status')" id="sort-header-status">
+                                        Status <span class="sort-indicator"></span>
+                                    </th>
+                                    <th style="padding: 12px; text-align: left; cursor: pointer;" onclick="changeOpmsSort('created_at')" id="sort-header-created_at">
+                                        Created <span class="sort-indicator">▼</span>
+                                    </th>
+                                    <th style="padding: 12px; text-align: center; cursor: pointer;" onclick="changeOpmsSort('priority')" id="sort-header-priority">
+                                        Priority <span class="sort-indicator"></span>
+                                    </th>
+                                    <th style="padding: 12px; text-align: center; width: 100px;">
+                                        Action
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="opms-recentUpdatesContainer">
+                                <tr>
+                                    <td colspan="6" style="padding: 40px; text-align: center;">
+                                        <div class="loading"></div>
+                                        <p>Loading recent updates...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination Controls -->
+                    <div id="opms-pagination" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid #e2e8f0; flex-wrap: wrap; gap: 12px;">
+                        <div style="color: #718096; font-size: 13px;">
+                            <span id="opms-pagination-info">Showing 0-0 of 0</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button class="btn btn-sm" onclick="changeOpmsPage(1)" id="opms-first-btn" disabled style="padding: 6px 12px;">« First</button>
+                            <button class="btn btn-sm" onclick="changeOpmsPage('prev')" id="opms-prev-btn" disabled>←</button>
+                            <div id="opms-page-numbers" style="display: flex; gap: 4px;"></div>
+                            <button class="btn btn-sm" onclick="changeOpmsPage('next')" id="opms-next-btn" disabled>→</button>
+                            <button class="btn btn-sm" onclick="changeOpmsPage('last')" id="opms-last-btn" disabled style="padding: 6px 12px;">Last »</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Summary -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Activity Summary</h2>
+                    </div>
+
+                    <div class="stats-summary">
+                        <div class="stats-item">
+                            <div class="label">Completed</div>
+                            <div class="value" style="color: var(--success);" id="opms-completedCount">--</div>
+                        </div>
+                        <div class="stats-item">
+                            <div class="label">Failed</div>
+                            <div class="value" style="color: var(--danger);" id="opms-failedCount">--</div>
+                        </div>
+                        <div class="stats-item">
+                            <div class="label">Pending</div>
+                            <div class="value" style="color: var(--warning);" id="opms-pendingCount">--</div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>📋 Sync Triggers</strong>
+                        <ul>
+                            <li>Database triggers on T_ITEM and T_PRODUCT updates</li>
+                            <li>Manual sync requests via API</li>
+                            <li>Scheduled batch synchronization</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 16px;">
+                        <strong>🔄 Synced Data</strong>
+                        <ul>
+                            <li>Item codes, product names, colors</li>
+                            <li>Vendor information and mappings</li>
+                            <li>Mini-forms (content, abrasion, fire codes)</li>
+                            <li>Product specifications and dimensions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: NetSuite → OPMS -->
+        <div class="tab-content" id="netsuite-to-opms">
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Syncs (24h)</div>
+                    <div class="metric-value" id="ns-totalJobs">--</div>
+                    <div class="metric-subtitle">Sync operations</div>
+                </div>
+
+                <div class="metric-card success">
+                    <div class="metric-label">Success Rate</div>
+                    <div class="metric-value" id="ns-successRate">--</div>
+                    <div class="metric-subtitle">Last 24 hours</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Items Processed</div>
+                    <div class="metric-value" id="ns-itemsProcessed">--</div>
+                    <div class="metric-subtitle">Total items synced</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Avg Duration</div>
+                    <div class="metric-value" id="ns-avgDuration">--</div>
+                    <div class="metric-subtitle">Seconds per sync</div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Recent Updates -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Recent Pricing Updates (NetSuite → OPMS)</h2>
+                        <button class="refresh-btn" onclick="refreshNetSuiteToOpms()">
+                            <span id="ns-refreshIcon">↻ Refresh</span>
+                        </button>
+                    </div>
+
+                    <div id="ns-recentUpdatesContainer">
+                        <div class="empty-state">
+                            <div class="loading"></div>
+                            <p>Loading recent updates...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Summary -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Activity Summary</h2>
+                    </div>
+
+                    <div class="stats-summary">
+                        <div class="stats-item">
+                            <div class="label">Completed</div>
+                            <div class="value" style="color: var(--success);" id="ns-completedCount">--</div>
+                        </div>
+                        <div class="stats-item">
+                            <div class="label">Failed</div>
+                            <div class="value" style="color: var(--danger);" id="ns-failedCount">--</div>
+                        </div>
+                        <div class="stats-item">
+                            <div class="label">Running</div>
+                            <div class="value" style="color: var(--primary);" id="ns-runningCount">--</div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>💲 Field Mappings (NetSuite → OPMS)</strong>
+                        <ul>
+                            <li>Base Price Line 1 → p_res_cut</li>
+                            <li>Base Price Line 2 → p_hosp_roll</li>
+                            <li>Cost → cost_cut</li>
+                            <li>Roll Price → cost_roll</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 16px; background: #feebc8; border-left: 4px solid var(--warning);">
+                        <strong>⚠️ Lisa Slayman Skip Logic</strong>
+                        <div style="color: #744210;">
+                            Items with custitemf3_lisa_item = TRUE are automatically skipped
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Last Updated -->
+        <div style="text-align: center; margin-top: 24px; color: white; font-size: 13px;">
+            Last updated: <span id="lastUpdate">--</span>
+        </div>
+    </div>
+
+    <!-- Details Modal (for sync item details) -->
+    <div id="detailsModal" onclick="if(event.target.id === 'detailsModal') closeDetailsModal();" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 3000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; max-width: 900px; width: 95%; max-height: 95vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column;">
+            <!-- Modal Header -->
+            <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%); padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; color: white; font-size: 18px;" id="detailsModalTitle">Sync Item Details</h2>
+                <button onclick="closeDetailsModal()" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;">
+                    ✕
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div style="flex: 1; padding: 20px; overflow: auto; background: #f7fafc;" id="detailsModalContent">
+                <!-- Content will be dynamically inserted -->
+            </div>
+            <!-- Modal Footer -->
+            <div style="padding: 16px 20px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px;">
+                <button onclick="copyDetailsModalContent()" id="detailsModalCopyBtn" style="padding: 10px 24px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                    📋 Copy JSON
+                </button>
+                <button onclick="closeDetailsModal()" style="padding: 10px 24px; background: #6b7280; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON Modal -->
+    <div id="jsonModal" onclick="if(event.target.id === 'jsonModal') closeJsonModal();" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column;">
+            <!-- Modal Header -->
+            <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%); padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; color: white; font-size: 18px;" id="jsonModalTitle">JSON Data</h2>
+                <button onclick="closeJsonModal()" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;">
+                    ✕
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div style="flex: 1; padding: 20px; overflow: auto; background: #f7fafc;">
+                <pre id="jsonModalText" style="margin: 0; padding: 16px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Monaco', 'Courier New', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word;"></pre>
+            </div>
+            <!-- Modal Footer -->
+            <div style="padding: 16px 20px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px;">
+                <button onclick="copyJsonToClipboard()" id="jsonModalCopyBtn" style="padding: 10px 24px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                    📋 Copy JSON
+                </button>
+                <button onclick="closeJsonModal()" style="padding: 10px 24px; background: #6b7280; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval = null;
+        let currentTab = 'opms-to-netsuite';
+        const API_BASE = window.location.origin;
+        
+        // OPMS sync state (server-side pagination)
+        const opmsState = {
+            page: 1,
+            limit: 20,
+            sortBy: 'created_at',
+            sortOrder: 'desc',
+            search: '',
+            totalPages: 1,
+            totalItems: 0
+        };
+        
+        // Search debounce timer
+        let opmsSearchTimer = null;
+        
+        // Old pagination state (kept for NetSuite tab compatibility)
+        const pagination = {
+            opms: { currentPage: 1, pageSize: 10, totalItems: 0, allData: [], sortColumn: null, sortDirection: 'desc' },
+            netsuite: { currentPage: 1, pageSize: 10, totalItems: 0, allData: [], sortColumn: null, sortDirection: 'desc' }
+        };
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup tab switching
+            setupTabs();
+            
+            // Initial load - load the active tab (OPMS to NetSuite)
+            refreshCurrentTab();
+
+            // Setup auto-refresh
+            const autoRefreshCheckbox = document.getElementById('autoRefresh');
+            autoRefreshCheckbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    startAutoRefresh();
+                } else {
+                    stopAutoRefresh();
+                }
+            });
+
+            // Start auto-refresh if enabled
+            if (autoRefreshCheckbox.checked) {
+                startAutoRefresh();
+            }
+            
+            // Setup OPMS search with debouncing (500ms delay)
+            const opmsSearchInput = document.getElementById('opms-search-input');
+            if (opmsSearchInput) {
+                opmsSearchInput.addEventListener('input', (e) => {
+                    // Clear existing timer
+                    if (opmsSearchTimer) {
+                        clearTimeout(opmsSearchTimer);
+                    }
+                    
+                    // Set new timer for 500ms
+                    opmsSearchTimer = setTimeout(() => {
+                        opmsState.search = e.target.value.trim();
+                        opmsState.page = 1; // Reset to page 1 on new search
+                        refreshOpmsToNetSuite();
+                    }, 500);
+                });
+            }
+        });
+
+        // Setup tab switching
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabName = button.getAttribute('data-tab');
+                    
+                    // Update active states
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    button.classList.add('active');
+                    document.getElementById(tabName).classList.add('active');
+                    
+                    // Update current tab
+                    currentTab = tabName;
+                    
+                    // Refresh the new tab's data
+                    refreshCurrentTab();
+                });
+            });
+        }
+
+        // Refresh current active tab
+        function refreshCurrentTab() {
+            if (currentTab === 'opms-to-netsuite') {
+                refreshOpmsToNetSuite();
+            } else if (currentTab === 'netsuite-to-opms') {
+                refreshNetSuiteToOpms();
+            }
+        }
+
+        // Refresh OPMS → NetSuite tab
+        async function refreshOpmsToNetSuite() {
+            const refreshBtn = document.querySelector('#opms-to-netsuite .refresh-btn');
+            const refreshIcon = document.getElementById('opms-refreshIcon');
+            
+            if (refreshBtn) refreshBtn.disabled = true;
+            if (refreshIcon) refreshIcon.innerHTML = '<span class="loading"></span>';
+
+            try {
+                // Build query parameters
+                const params = new URLSearchParams({
+                    page: opmsState.page,
+                    limit: opmsState.limit,
+                    sortBy: opmsState.sortBy,
+                    sortOrder: opmsState.sortOrder
+                });
+                
+                if (opmsState.search) {
+                    params.append('search', opmsState.search);
+                }
+                
+                const response = await fetch(`${API_BASE}/api/sync-dashboard/opms-to-netsuite/metrics?${params}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    updateOpmsMetrics(data.data);
+                    updateOpmsRecentUpdates(data.data.recentUpdates);
+                    updateOpmsPagination(data.data.pagination);
+                }
+
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
+                updateSyncStatus('live');
+
+            } catch (error) {
+                console.error('Failed to refresh OPMS→NetSuite dashboard:', error);
+                updateSyncStatus('offline');
+            } finally {
+                if (refreshBtn) refreshBtn.disabled = false;
+                if (refreshIcon) refreshIcon.textContent = '↻ Refresh';
+            }
+        }
+
+        // Refresh NetSuite → OPMS tab
+        async function refreshNetSuiteToOpms() {
+            const refreshBtn = document.querySelector('#netsuite-to-opms .refresh-btn');
+            const refreshIcon = document.getElementById('ns-refreshIcon');
+            
+            if (refreshBtn) refreshBtn.disabled = true;
+            if (refreshIcon) refreshIcon.innerHTML = '<span class="loading"></span>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/sync-dashboard/netsuite-to-opms/metrics`);
+                const data = await response.json();
+
+                if (data.success) {
+                    updateNetSuiteMetrics(data.data);
+                    updateNetSuiteRecentUpdates(data.data.recentUpdates);
+                }
+
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
+                updateSyncStatus('live');
+
+            } catch (error) {
+                console.error('Failed to refresh NetSuite→OPMS dashboard:', error);
+                updateSyncStatus('offline');
+            } finally {
+                if (refreshBtn) refreshBtn.disabled = false;
+                if (refreshIcon) refreshIcon.textContent = '↻ Refresh';
+            }
+        }
+
+        // Update OPMS → NetSuite metrics
+        function updateOpmsMetrics(data) {
+            const overview = data.overview;
+
+            document.getElementById('opms-totalJobs').textContent = overview.totalJobs || 0;
+            document.getElementById('opms-successRate').textContent = overview.successRate + '%';
+            document.getElementById('opms-completedJobs').textContent = overview.completedJobs || 0;
+            document.getElementById('opms-avgDuration').textContent = overview.avgDurationSeconds || 0;
+
+            document.getElementById('opms-completedCount').textContent = overview.completedJobs || 0;
+            document.getElementById('opms-failedCount').textContent = overview.failedJobs || 0;
+            document.getElementById('opms-pendingCount').textContent = overview.pendingJobs || 0;
+
+            // Update tab badge
+            document.getElementById('opmsToNsCount').textContent = overview.totalJobs || 0;
+        }
+
+        // Update NetSuite → OPMS metrics
+        function updateNetSuiteMetrics(data) {
+            const overview = data.overview;
+
+            document.getElementById('ns-totalJobs').textContent = overview.totalJobs || 0;
+            document.getElementById('ns-successRate').textContent = overview.successRate + '%';
+            document.getElementById('ns-itemsProcessed').textContent = overview.totalItemsProcessed || 0;
+            document.getElementById('ns-avgDuration').textContent = overview.avgDurationSeconds || 0;
+
+            document.getElementById('ns-completedCount').textContent = overview.completedJobs || 0;
+            document.getElementById('ns-failedCount').textContent = overview.failedJobs || 0;
+            document.getElementById('ns-runningCount').textContent = overview.runningJobs || 0;
+
+            // Update tab badge
+            document.getElementById('nsToOpmsCount').textContent = overview.totalJobs || 0;
+        }
+
+        // Helper function to detect missing data errors and return appropriate symbol
+        function getErrorSymbol(errorMessage) {
+            if (!errorMessage) return '❌';
+            
+            const msg = errorMessage.toLowerCase();
+            const missingDataKeywords = [
+                'no item code',
+                'missing item code',
+                'no vendor',
+                'missing vendor',
+                'no vendor mapping',
+                'missing vendor mapping',
+                'no data',
+                'missing data',
+                'intentionally blocked',
+                'code="null"',
+                'code is null'
+            ];
+            
+            const isMissingData = missingDataKeywords.some(keyword => msg.includes(keyword));
+            
+            return isMissingData ? '⚠️' : '❌'; // ⚠️ for missing data, ❌ for other errors
+        }
+
+        // Helper function to format error message with better readability
+        function formatErrorMessage(errorMessage) {
+            if (!errorMessage) return '';
+            
+            // Split on common patterns to make it more readable
+            let formatted = errorMessage;
+            
+            // Replace technical separators with line breaks
+            formatted = formatted.replace(/\. /g, '.<br>');
+            formatted = formatted.replace(/\. /g, '.<br>');
+            
+            // Highlight key-value pairs
+            formatted = formatted.replace(/(\w+)=("?[^,<]+"?)/g, '<strong>$1</strong>=<code>$2</code>');
+            
+            // Highlight important phrases
+            formatted = formatted.replace(/(Max retries exceeded)/gi, '<strong style="color: #d69e2e;">$1</strong>');
+            formatted = formatted.replace(/(intentionally blocked)/gi, '<strong style="color: #c05621;">$1</strong>');
+            formatted = formatted.replace(/(not syncable)/gi, '<strong style="color: #c05621;">$1</strong>');
+            
+            return formatted;
+        }
+
+        // Helper function to format NetSuite data in a nice readable format - SHOWS ALL FIELDS
+        function formatNetSuiteData(data) {
+            if (!data) return '<div style="color: #6b7280; font-style: italic;">No data available</div>';
+            
+            const sections = {
+                core: [],
+                vendor: [],
+                custom: [],
+                miniForms: [],
+                other: []
+            };
+            
+            // Categorize all fields
+            Object.keys(data).forEach(key => {
+                const value = data[key];
+                let label = key.replace(/_/g, ' ').replace(/custitem/g, '').trim();
+                
+                // Core fields
+                if (['itemid', 'itemId', 'displayname', 'displayName', 'type'].includes(key.toLowerCase())) {
+                    sections.core.push({ key: label, value });
+                }
+                // Vendor fields
+                else if (['vendor', 'vendorcode', 'vendorcode'].includes(key.toLowerCase()) || key.toLowerCase().includes('vendor')) {
+                    sections.vendor.push({ key: label, value });
+                }
+                // Mini-forms (rich text fields)
+                else if (['frontcontent', 'backcontent', 'abrasion', 'firecodes', 'front_content', 'back_content'].some(f => key.toLowerCase().includes(f))) {
+                    sections.miniForms.push({ key: label, value });
+                }
+                // Custom NetSuite fields
+                else if (key.startsWith('custitem_') || key.startsWith('custitem')) {
+                    sections.custom.push({ key: label, value });
+                }
+                // Other fields
+                else {
+                    sections.other.push({ key: label, value });
+                }
+            });
+            
+            let html = [];
+            
+            // Core Information
+            if (sections.core.length > 0) {
+                html.push('<div style="background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #3182ce;"><h4 style="margin: 0 0 12px 0; color: #2d3748;">📦 Core Information</h4>');
+                sections.core.forEach(f => {
+                    const displayValue = typeof f.value === 'object' ? JSON.stringify(f.value) : (f.value || 'N/A');
+                    html.push(`<div style="padding: 6px 0; border-bottom: 1px solid #e2e8f0;"><strong>${f.key}:</strong> <span style="color: #4a5568;">${displayValue}</span></div>`);
+                });
+                html.push('</div>');
+            }
+            
+            // Vendor Information
+            if (sections.vendor.length > 0) {
+                html.push('<div style="background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #38a169;"><h4 style="margin: 0 0 12px 0; color: #2d3748;">🏭 Vendor Information</h4>');
+                sections.vendor.forEach(f => {
+                    const displayValue = typeof f.value === 'object' ? JSON.stringify(f.value) : (f.value || 'N/A');
+                    html.push(`<div style="padding: 6px 0; border-bottom: 1px solid #e2e8f0;"><strong>${f.key}:</strong> <span style="color: #4a5568;">${displayValue}</span></div>`);
+                });
+                html.push('</div>');
+            }
+            
+            // Custom Fields
+            if (sections.custom.length > 0) {
+                html.push('<div style="background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #d69e2e;"><h4 style="margin: 0 0 12px 0; color: #2d3748;">⚙️ Custom NetSuite Fields</h4>');
+                sections.custom.forEach(f => {
+                    const displayValue = typeof f.value === 'object' ? JSON.stringify(f.value) : (f.value || 'N/A');
+                    html.push(`<div style="padding: 6px 0; border-bottom: 1px solid #e2e8f0;"><strong>${f.key}:</strong> <span style="color: #4a5568;">${displayValue}</span></div>`);
+                });
+                html.push('</div>');
+            }
+            
+            // Mini-Forms (Rich Text)
+            if (sections.miniForms.length > 0) {
+                html.push('<div style="background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #9f7aea;"><h4 style="margin: 0 0 12px 0; color: #2d3748;">🎨 Mini-Forms (Rich Text Fields)</h4>');
+                sections.miniForms.forEach(f => {
+                    html.push(`<div style="padding: 6px 0; border-bottom: 1px solid #e2e8f0;"><strong>${f.key}:</strong> <span style="color: #4a5568; font-size: 12px;">${typeof f.value === 'string' && f.value.length > 100 ? f.value.substring(0, 100) + '...' : (f.value || 'N/A')}</span></div>`);
+                });
+                html.push('</div>');
+            }
+            
+            // Other Fields
+            if (sections.other.length > 0) {
+                html.push('<div style="background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #718096;"><h4 style="margin: 0 0 12px 0; color: #2d3748;">📋 Other Fields</h4>');
+                sections.other.forEach(f => {
+                    const displayValue = typeof f.value === 'object' ? JSON.stringify(f.value) : (f.value || 'N/A');
+                    html.push(`<div style="padding: 6px 0; border-bottom: 1px solid #e2e8f0;"><strong>${f.key}:</strong> <span style="color: #4a5568;">${displayValue}</span></div>`);
+                });
+                html.push('</div>');
+            }
+            
+            if (html.length === 0) {
+                return '<div style="color: #6b7280; font-style: italic;">No formatted data available</div>';
+            }
+            
+            return html.join('');
+        }
+
+        // Track expanded row states
+        const expandedRows = new Set();
+        // Store NetSuite data for modal access
+        const netsuiteDataCache = new Map();
+
+        // Update OPMS → NetSuite recent updates
+        function updateOpmsRecentUpdates(updates) {
+            const container = document.getElementById('opms-recentUpdatesContainer');
+
+            if (!updates || updates.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="padding: 40px; text-align: center;">
+                            <div class="empty-state">
+                                <p>No recent sync operations</p>
+                                <p style="font-size: 12px; margin-top: 8px;">OPMS changes will appear here</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const updatesHTML = updates.map((update, index) => {
+                const displayName = update.productName + (update.colors ? ': ' + update.colors : '');
+                const statusClass = (update.status || 'PENDING').toLowerCase();
+                const statusDisplay = update.status || 'PENDING';
+                const hasDetails = update.errorMessage || update.retryCount > 0 || update.processedAt;
+                const errorSymbol = getErrorSymbol(update.errorMessage);
+                
+                // Cache all items for modal access (don't require processingResults)
+                netsuiteDataCache.set(update.id || index, update);
+                
+                const canResync = update.status !== 'PROCESSING' && update.status !== 'PENDING';
+                const buttonDisabled = !update.itemId || !canResync ? 'disabled' : '';
+                const buttonClass = update.status === 'COMPLETED' ? 'btn-resync-success' : 'btn-resync';
+                
+                return `
+                    <tr style="cursor: pointer; border-bottom: 1px solid #e2e8f0;" onclick="showDetailsModal('${update.id || index}')" class="hover:bg-gray-50">
+                        <td style="padding: 12px;">
+                            <strong>${update.itemCode || 'N/A'}</strong>
+                        </td>
+                        <td style="padding: 12px; max-width: 300px; overflow: hidden; text-overflow: ellipsis;" title="${displayName}">
+                            ${displayName}
+                        </td>
+                        <td style="padding: 12px;">
+                            <span class="status-badge ${statusClass}" style="padding: 4px 8px; border-radius: 4px; font-size: 11px;">
+                                ${statusDisplay}
+                            </span>
+                        </td>
+                        <td style="padding: 12px; color: #718096; font-size: 12px;">
+                            ${formatTime(update.createdAt)}
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="padding: 4px 8px; background: ${update.priority === 'HIGH' ? '#fed7d7' : update.priority === 'LOW' ? '#c6f6d5' : '#feebc8'}; border-radius: 4px; font-size: 11px;">
+                                ${(update.priority || 'NORMAL').toUpperCase()}
+                            </span>
+                        </td>
+                        <td style="padding: 12px; text-align: center;" onclick="event.stopPropagation();">
+                            <button 
+                                id="sync-btn-${update.id || index}" 
+                                class="sync-button ${buttonClass}"
+                                ${buttonDisabled}
+                                onclick="triggerItemResync('${update.itemId}', '${update.id || index}', '${update.itemCode || 'N/A'}'); event.stopPropagation();"
+                                style="padding: 6px 12px; background: ${update.status === 'FAILED' ? '#f56565' : update.status === 'COMPLETED' ? '#48bb78' : '#667eea'}; color: white; border: none; border-radius: 4px; cursor: ${buttonDisabled ? 'not-allowed' : 'pointer'}; font-size: 11px; font-weight: 600; transition: all 0.2s; opacity: ${buttonDisabled ? '0.5' : '1'};"
+                                title="${buttonDisabled ? 'Already syncing or no item ID' : 'Re-sync this item to NetSuite'}">
+                                ${update.status === 'PROCESSING' || update.status === 'PENDING' ? '⏳ Syncing...' : '🔄 Sync'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = updatesHTML;
+        }
+
+        // OPMS Pagination Functions
+        function updateOpmsPagination(paginationData) {
+            if (!paginationData) return;
+            
+            // Update state
+            opmsState.totalPages = paginationData.totalPages;
+            opmsState.totalItems = paginationData.totalItems;
+            
+            // Update info text
+            const start = (paginationData.currentPage - 1) * paginationData.itemsPerPage + 1;
+            const end = Math.min(start + paginationData.itemsPerPage - 1, paginationData.totalItems);
+            document.getElementById('opms-pagination-info').textContent = 
+                `Showing ${start}-${end} of ${paginationData.totalItems}`;
+            
+            // Update page number buttons
+            renderOpmsPageNumbers(paginationData);
+            
+            // Enable/disable navigation buttons
+            const firstBtn = document.getElementById('opms-first-btn');
+            const prevBtn = document.getElementById('opms-prev-btn');
+            const nextBtn = document.getElementById('opms-next-btn');
+            const lastBtn = document.getElementById('opms-last-btn');
+            
+            if (firstBtn) firstBtn.disabled = !paginationData.hasPrevPage;
+            if (prevBtn) prevBtn.disabled = !paginationData.hasPrevPage;
+            if (nextBtn) nextBtn.disabled = !paginationData.hasNextPage;
+            if (lastBtn) lastBtn.disabled = !paginationData.hasNextPage;
+        }
+        
+        function renderOpmsPageNumbers(paginationData) {
+            const container = document.getElementById('opms-page-numbers');
+            if (!container) return;
+            
+            const currentPage = paginationData.currentPage;
+            const totalPages = paginationData.totalPages;
+            const pageButtons = [];
+            
+            // Determine which pages to show (current +/- 2 pages)
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+            
+            // Adjust if we're near the beginning or end
+            if (currentPage <= 3) {
+                endPage = Math.min(5, totalPages);
+            } else if (currentPage >= totalPages - 2) {
+                startPage = Math.max(1, totalPages - 4);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const isActive = i === currentPage;
+                pageButtons.push(`
+                    <button 
+                        class="btn btn-sm" 
+                        onclick="changeOpmsPage(${i})"
+                        style="padding: 6px 12px; min-width: 36px; ${isActive ? 'background: #667eea; color: white; font-weight: 600;' : 'background: white; color: #4a5568;'}"
+                    >
+                        ${i}
+                    </button>
+                `);
+            }
+            
+            // Add ellipsis if needed
+            if (startPage > 1) {
+                pageButtons.unshift(`<span style="padding: 6px; color: #cbd5e0;">...</span>`);
+            }
+            if (endPage < totalPages) {
+                pageButtons.push(`<span style="padding: 6px; color: #cbd5e0;">...</span>`);
+            }
+            
+            container.innerHTML = pageButtons.join('');
+        }
+        
+        function changeOpmsPage(action) {
+            if (typeof action === 'number') {
+                opmsState.page = action;
+            } else if (action === 'prev') {
+                opmsState.page = Math.max(1, opmsState.page - 1);
+            } else if (action === 'next') {
+                opmsState.page = Math.min(opmsState.totalPages, opmsState.page + 1);
+            } else if (action === 'last') {
+                opmsState.page = opmsState.totalPages;
+            }
+            refreshOpmsToNetSuite();
+        }
+        
+        function changeOpmsSort(column) {
+            // Toggle sort order if clicking same column, otherwise default to desc
+            if (opmsState.sortBy === column) {
+                opmsState.sortOrder = opmsState.sortOrder === 'desc' ? 'asc' : 'desc';
+            } else {
+                opmsState.sortBy = column;
+                opmsState.sortOrder = 'desc';
+            }
+            
+            // Update sort indicators
+            document.querySelectorAll('[id^="sort-header-"]').forEach(header => {
+                const indicator = header.querySelector('.sort-indicator');
+                if (indicator) indicator.textContent = '';
+            });
+            
+            const activeHeader = document.getElementById(`sort-header-${column}`);
+            if (activeHeader) {
+                const indicator = activeHeader.querySelector('.sort-indicator');
+                if (indicator) {
+                    indicator.textContent = opmsState.sortOrder === 'desc' ? '▼' : '▲';
+                }
+            }
+            
+            opmsState.page = 1; // Reset to page 1 on sort change
+            refreshOpmsToNetSuite();
+        }
+        
+        function clearOpmsSearch() {
+            const searchInput = document.getElementById('opms-search-input');
+            if (searchInput) searchInput.value = '';
+            opmsState.search = '';
+            opmsState.page = 1;
+            refreshOpmsToNetSuite();
+        }
+
+        // Update NetSuite → OPMS recent updates
+        function updateNetSuiteRecentUpdates(updates) {
+            const container = document.getElementById('ns-recentUpdatesContainer');
+
+            if (!updates || updates.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No recent pricing updates</p>
+                        <p style="font-size: 12px; margin-top: 8px;">Sync activity will appear here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const updatesHTML = updates.map((update, index) => {
+                // Helper function to format price comparison with enhanced UX
+                const formatPriceComparison = (before, after, label) => {
+                    const priceChanged = before != null && after != null && parseFloat(before) !== parseFloat(after);
+                    
+                    if (priceChanged) {
+                        return `
+                            <div class="pricing-item">
+                                <span class="pricing-label">${label}:</span>
+                                <span class="pricing-value">
+                                    <span class="pricing-change-box">
+                                        <span class="price-old">$${formatPrice(before)}</span>
+                                        <span class="price-new">$${formatPrice(after)}</span>
+                                    </span>
+                                </span>
+                            </div>
+                        `;
+                    } else {
+                        const price = after || before || update.pricing?.customerCut;
+                        return `
+                            <div class="pricing-item">
+                                <span class="pricing-label">${label}:</span>
+                                <span class="pricing-value unchanged">$${formatPrice(price)}</span>
+                            </div>
+                        `;
+                    }
+                };
+                
+                return `
+                    <div class="update-item ${update.status}">
+                        <div class="item-header">
+                            <div>
+                                <span class="item-code">${update.itemCode || 'N/A'}</span>
+                                <span class="item-product-inline">${update.productName || 'Unknown Product'}${update.itemColor ? ': ' + update.itemColor : ''}</span>
+                            </div>
+                            <span class="item-time">${formatTime(update.updatedAt)}</span>
+                        </div>
+                        <div class="pricing-grid">
+                            ${formatPriceComparison(
+                                update.pricingBefore?.customerCut,
+                                update.pricingAfter?.customerCut,
+                                'Customer Cut'
+                            )}
+                            ${formatPriceComparison(
+                                update.pricingBefore?.customerRoll,
+                                update.pricingAfter?.customerRoll,
+                                'Customer Roll'
+                            )}
+                            ${formatPriceComparison(
+                                update.pricingBefore?.vendorCut,
+                                update.pricingAfter?.vendorCut,
+                                'Vendor Cut'
+                            )}
+                            ${formatPriceComparison(
+                                update.pricingBefore?.vendorRoll,
+                                update.pricingAfter?.vendorRoll,
+                                'Vendor Roll'
+                            )}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = updatesHTML;
+        }
+
+        function updateSyncStatus(status) {
+            const statusEl = document.getElementById('syncStatus');
+            statusEl.className = 'sync-status ' + status;
+            
+            if (status === 'live') {
+                statusEl.textContent = 'Live';
+            } else if (status === 'degraded') {
+                statusEl.textContent = 'Degraded';
+            } else {
+                statusEl.textContent = 'Offline';
+            }
+        }
+
+        function formatPrice(price) {
+            if (price === null || price === undefined) return '--';
+            return parseFloat(price).toFixed(2);
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return '--';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                refreshCurrentTab();
+            }, 10000); // Refresh every 10 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // Batch Re-Sync Control Functions
+        let batchResyncProcess = null;
+
+        function toggleBatchResyncModal() {
+            const modal = document.getElementById('batchResyncModal');
+            if (modal.style.display === 'none' || modal.style.display === '') {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            } else {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Restore scrolling
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('batchResyncModal');
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    toggleBatchResyncModal();
+                }
+            });
+        });
+
+        async function triggerBatchResync() {
+            const startBtn = document.getElementById('batchResyncBtn');
+            const stopBtn = document.getElementById('stopBatchBtn');
+            const statusText = document.getElementById('batchStatusText');
+            const progressText = document.getElementById('batchProgress');
+            const modalStatus = document.getElementById('batchModalStatus');
+
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            statusText.textContent = 'Starting...';
+            statusText.style.color = '#f59e0b';
+            progressText.textContent = 'Initializing batch re-sync...';
+            modalStatus.textContent = 'Running...';
+            modalStatus.style.background = 'rgba(245, 158, 11, 0.3)';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/opms-sync/trigger-batch-resync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        priority: 'NORMAL',
+                        batchSize: 50,
+                        delay: 1000
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    statusText.textContent = 'Running...';
+                    statusText.style.color = '#3b82f6';
+                    progressText.textContent = `Batch started: ${data.data.totalItems} items to process`;
+                    
+                    // Start polling for status
+                    batchResyncProcess = setInterval(async () => {
+                        try {
+                            const statusResponse = await fetch(`${API_BASE}/api/opms-sync/batch-resync-status`);
+                            const statusData = await statusResponse.json();
+                            
+                            if (statusData.success && statusData.data) {
+                                const { queued, skipped, failed, total, running } = statusData.data;
+                                progressText.textContent = 
+                                    `Processing: ${queued + skipped} of ${total} (Queued: ${queued}, Failed: ${failed})`;
+                                
+                                if (!running) {
+                                    // Batch complete
+                                    statusText.textContent = 'Complete';
+                                    statusText.style.color = '#059669';
+                                    progressText.textContent = `Completed: ${queued} queued, ${failed} failed`;
+                                    startBtn.disabled = false;
+                                    stopBtn.disabled = true;
+                                    clearInterval(batchResyncProcess);
+                                    batchResyncProcess = null;
+                                    modalStatus.textContent = 'Complete';
+                                    modalStatus.style.background = 'rgba(5, 150, 105, 0.3)';
+                                    
+                                    // Refresh dashboard
+                                    refreshOpmsToNetSuite();
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error checking batch status:', error);
+                        }
+                    }, 5000); // Poll every 5 seconds
+                } else {
+                    throw new Error(data.message || 'Failed to start batch re-sync');
+                }
+            } catch (error) {
+                statusText.textContent = 'Error';
+                statusText.style.color = '#dc2626';
+                progressText.textContent = `Error: ${error.message}`;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                modalStatus.textContent = 'Error';
+                modalStatus.style.background = 'rgba(220, 38, 38, 0.3)';
+                alert('Failed to start batch re-sync: ' + error.message);
+            }
+        }
+
+        async function stopBatchResync() {
+            const startBtn = document.getElementById('batchResyncBtn');
+            const stopBtn = document.getElementById('stopBatchBtn');
+            const statusText = document.getElementById('batchStatusText');
+            const progressText = document.getElementById('batchProgress');
+            const modalStatus = document.getElementById('batchModalStatus');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/opms-sync/stop-batch-resync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    statusText.textContent = 'Stopping...';
+                    statusText.style.color = '#f59e0b';
+                    progressText.textContent = 'Gracefully stopping batch re-sync...';
+                    modalStatus.textContent = 'Stopping...';
+                    modalStatus.style.background = 'rgba(245, 158, 11, 0.3)';
+                    
+                    // Clear polling interval
+                    if (batchResyncProcess) {
+                        clearInterval(batchResyncProcess);
+                        batchResyncProcess = null;
+                    }
+
+                    // Re-enable start button after a delay
+                    setTimeout(() => {
+                        startBtn.disabled = false;
+                        stopBtn.disabled = true;
+                        statusText.textContent = 'Stopped';
+                        statusText.style.color = '#6b7280';
+                        progressText.textContent = 'Batch re-sync stopped';
+                        modalStatus.textContent = 'Ready';
+                        modalStatus.style.background = 'rgba(255,255,255,0.2)';
+                        
+                        // Refresh dashboard
+                        refreshOpmsToNetSuite();
+                    }, 2000);
+                }
+            } catch (error) {
+                alert('Failed to stop batch re-sync: ' + error.message);
+            }
+        }
+
+        // Handle page visibility for auto-refresh
+        document.addEventListener('visibilitychange', () => {
+            const autoRefreshCheckbox = document.getElementById('autoRefresh');
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else if (autoRefreshCheckbox.checked) {
+                refreshCurrentTab();
+                startAutoRefresh();
+            }
+        });
+
+        // Pagination and Sorting Functions
+        function sortTable(tableType, columnName, columnIndex) {
+            const state = pagination[tableType];
+            const column = columnName;
+            
+            // Toggle sort direction if clicking the same column
+            if (state.sortColumn === column) {
+                state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                state.sortColumn = column;
+                state.sortDirection = 'desc'; // Default to descending
+            }
+            
+            // Sort the data
+            state.allData.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+                
+                // Handle different data types
+                if (column === 'createdAt' || column === 'processedAt') {
+                    aVal = new Date(aVal || 0);
+                    bVal = new Date(bVal || 0);
+                } else if (typeof aVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+                
+                if (aVal < bVal) return state.sortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return state.sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            // Reset to first page and render
+            state.currentPage = 1;
+            renderPagedData(tableType);
+        }
+
+        function changePage(tableType, direction) {
+            const state = pagination[tableType];
+            const totalPages = Math.ceil(state.totalItems / state.pageSize);
+            
+            if (direction === 'next') {
+                if (state.currentPage < totalPages) {
+                    state.currentPage++;
+                }
+            } else if (direction === 'prev') {
+                if (state.currentPage > 1) {
+                    state.currentPage--;
+                }
+            } else if (direction === 'first') {
+                state.currentPage = 1;
+            } else if (direction === 'last') {
+                state.currentPage = totalPages;
+            }
+            
+            renderPagedData(tableType);
+        }
+
+        function handlePageJump(event, tableType) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                jumpToPage(tableType);
+            }
+        }
+
+        function jumpToPage(tableType) {
+            const state = pagination[tableType];
+            const input = document.getElementById(`${tableType}-jump-page`);
+            const pageNum = parseInt(input.value);
+            const totalPages = Math.ceil(state.totalItems / state.pageSize);
+            
+            if (pageNum >= 1 && pageNum <= totalPages) {
+                state.currentPage = pageNum;
+                renderPagedData(tableType);
+            } else {
+                alert(`Please enter a page number between 1 and ${totalPages}`);
+            }
+        }
+
+        function renderPagedData(tableType) {
+            const state = pagination[tableType];
+            const start = (state.currentPage - 1) * state.pageSize;
+            const end = start + state.pageSize;
+            const pageData = state.allData.slice(start, end);
+            
+            if (tableType === 'opms') {
+                updateOpmsRecentUpdates(pageData);
+            } else {
+                // Similar for NetSuite tab
+            }
+            
+            // Update pagination info and buttons
+            const startItem = state.totalItems > 0 ? start + 1 : 0;
+            const endItem = Math.min(end, state.totalItems);
+            const totalPages = Math.ceil(state.totalItems / state.pageSize);
+            
+            document.getElementById(`${tableType}-pagination-info`).textContent = 
+                `Showing ${startItem}-${endItem} of ${state.totalItems}`;
+            document.getElementById(`${tableType}-current-page`).textContent = state.currentPage;
+            document.getElementById(`${tableType}-total-pages`).textContent = totalPages;
+            document.getElementById(`${tableType}-jump-page`).value = state.currentPage;
+            
+            const firstBtn = document.getElementById(`${tableType}-first-btn`);
+            const prevBtn = document.getElementById(`${tableType}-prev-btn`);
+            const nextBtn = document.getElementById(`${tableType}-next-btn`);
+            const lastBtn = document.getElementById(`${tableType}-last-btn`);
+            
+            firstBtn.disabled = state.currentPage === 1;
+            prevBtn.disabled = state.currentPage === 1;
+            nextBtn.disabled = state.currentPage >= totalPages;
+            lastBtn.disabled = state.currentPage >= totalPages;
+        }
+
+        function showDetailsModal(itemId) {
+            const update = netsuiteDataCache.get(itemId);
+            if (!update) {
+                console.error('No data found for item:', itemId);
+                alert('Item data not available. Please try refreshing the dashboard.');
+                return;
+            }
+            
+            const modal = document.getElementById('detailsModal');
+            const modalTitle = document.getElementById('detailsModalTitle');
+            const modalContent = document.getElementById('detailsModalContent');
+            
+            // Build title
+            const displayName = update.productName + (update.colors ? ': ' + update.colors : '');
+            modalTitle.textContent = `Sync Details - ${update.itemCode || 'Item'}`;
+            
+            // Build content
+            let content = `
+                <div style="font-size: 13px;">
+                    <!-- Event Information -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; padding: 12px; background: white; border-radius: 6px;">
+                        <div><strong>Event Type:</strong> ${update.eventType || 'UPDATE'}</div>
+                        <div><strong>Retry Count:</strong> ${update.retryCount || 0}</div>
+                        ${update.processedAt ? `<div><strong>Processed:</strong> ${formatTime(update.processedAt)}</div>` : ''}
+                        <div><strong>Priority:</strong> ${(update.priority || 'NORMAL').toUpperCase()}</div>
+                    </div>
+
+                    <!-- Item and Product Details -->
+                    <div style="background: white; border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+                        <h4 style="margin: 0 0 12px 0; color: #2d3748;">📦 Item & Product Information</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+                            <div><strong>Item Code:</strong> ${update.itemCode || 'N/A'}</div>
+                            <div><strong>Product Name:</strong> ${update.productName || 'Unknown'}</div>
+                            ${update.colors ? `<div><strong>Colors:</strong> ${update.colors}</div>` : ''}
+                            <div><strong>Item ID:</strong> ${update.itemId || 'N/A'}</div>
+                            <div><strong>Product ID:</strong> ${update.productId || 'N/A'}</div>
+                            ${update.jobId ? `<div><strong>Sync Job ID:</strong> ${update.jobId}</div>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Processing Results (NetSuite Data) -->
+                    ${update.processingResults ? `
+                    <div style="background: white; border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 style="margin: 0; color: #2d3748;">🔗 NetSuite Sync Data</h4>
+                            <button onclick="showNetSuiteData('${itemId}')" style="padding: 6px 16px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                                📋 View Raw JSON
+                            </button>
+                        </div>
+                        ${formatNetSuiteData(update.processingResults)}
+                    </div>
+                    ` : ''}
+
+                    <!-- Error Message -->
+                    ${update.errorMessage ? `
+                    <div class="error-message" style="margin-top: 8px; padding: 12px; background: ${getErrorSymbol(update.errorMessage) === '⚠️' ? '#fef3c7' : '#fef2f2'}; border-left: 4px solid ${getErrorSymbol(update.errorMessage) === '⚠️' ? '#f59e0b' : '#dc2626'}; border-radius: 4px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="font-size: 20px;">${getErrorSymbol(update.errorMessage)}</span>
+                            <strong style="color: ${getErrorSymbol(update.errorMessage) === '⚠️' ? '#92400e' : '#dc2626'};">
+                                ${getErrorSymbol(update.errorMessage) === '⚠️' ? 'Missing Data Alert:' : 'Error Details:'}
+                            </strong>
+                        </div>
+                        <div style="color: ${getErrorSymbol(update.errorMessage) === '⚠️' ? '#78350f' : '#991b1b'}; font-size: 13px; line-height: 1.6;">
+                            ${formatErrorMessage(update.errorMessage)}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Event Data -->
+                    ${update.eventData ? `
+                    <div style="background: white; border-radius: 6px; padding: 16px; margin-top: 16px;">
+                        <h4 style="margin: 0 0 12px 0; color: #2d3748;">📋 Event Data</h4>
+                        <div style="font-family: monospace; font-size: 11px; background: #f7fafc; padding: 12px; border-radius: 4px; overflow-x: auto;">
+                            <pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word;">${JSON.stringify(update.eventData, null, 2)}</pre>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            modalContent.innerHTML = content;
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDetailsModal() {
+            const modal = document.getElementById('detailsModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function copyDetailsModalContent() {
+            const activeUpdate = Array.from(netsuiteDataCache.values()).find(u => true);
+            if (!activeUpdate) return;
+            
+            const dataToCopy = activeUpdate.processingResults ? activeUpdate.processingResults : activeUpdate;
+            const jsonText = JSON.stringify(dataToCopy, null, 2);
+            
+            navigator.clipboard.writeText(jsonText).then(() => {
+                const copyBtn = document.getElementById('detailsModalCopyBtn');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✓ Copied!';
+                copyBtn.style.background = '#059669';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.style.background = '#667eea';
+                }, 2000);
+            });
+        }
+
+        function showNetSuiteData(itemId) {
+            const data = netsuiteDataCache.get(itemId);
+            if (!data) return;
+            
+            const modal = document.getElementById('jsonModal');
+            const modalTitle = document.getElementById('jsonModalTitle');
+            const jsonText = document.getElementById('jsonModalText');
+            
+            modalTitle.textContent = `NetSuite Sync Data - ${data.itemCode || 'Item'}`;
+            jsonText.textContent = JSON.stringify(data.processingResults, null, 2);
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function showJsonInModal(data, title) {
+            const modal = document.getElementById('jsonModal');
+            const modalTitle = document.getElementById('jsonModalTitle');
+            const jsonText = document.getElementById('jsonModalText');
+            
+            modalTitle.textContent = title;
+            jsonText.textContent = JSON.stringify(data, null, 2);
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeJsonModal() {
+            const modal = document.getElementById('jsonModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function copyJsonToClipboard() {
+            const jsonText = document.getElementById('jsonModalText');
+            navigator.clipboard.writeText(jsonText.textContent).then(() => {
+                const copyBtn = document.getElementById('jsonModalCopyBtn');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✓ Copied!';
+                copyBtn.style.background = '#059669';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.style.background = '#667eea';
+                }, 2000);
+            });
+        }
+
+        // Sync Enable/Disable Toggle Functions
+        let syncEnabled = null;
+        let manualItemDashboardEnabled = true; // default allow
+
+        // Load sync state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSyncState();
+        });
+
+        async function loadSyncState() {
+            try {
+                const response = await fetch(`${API_BASE}/api/opms-sync/config`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    syncEnabled = data.data.enabled;
+                    manualItemDashboardEnabled = data.data.manualItemDashboardEnabled ?? true;
+                    updateSyncToggleButton();
+                    updateManualItemControls();
+                }
+            } catch (error) {
+                console.error('Failed to load sync state:', error);
+                syncEnabled = true; // Default to enabled on error
+                updateSyncToggleButton();
+                updateManualItemControls();
+            }
+        }
+
+        function updateSyncToggleButton() {
+            const btn = document.getElementById('syncToggleBtn');
+            const text = document.getElementById('syncToggleText');
+            
+            if (syncEnabled === null) {
+                btn.style.background = '#9ca3af';
+                text.textContent = 'Loading...';
+                btn.disabled = true;
+            } else if (syncEnabled) {
+                btn.style.background = '#059669';
+                text.textContent = '✓ ENABLED';
+                btn.onclick = () => toggleSync();
+            } else {
+                btn.style.background = '#dc2626';
+                text.textContent = '✗ DISABLED';
+                btn.onclick = () => toggleSync();
+            }
+        }
+
+        async function toggleSync() {
+            const btn = document.getElementById('syncToggleBtn');
+            const text = document.getElementById('syncToggleText');
+            
+            // Disable button during request
+            btn.disabled = true;
+            text.textContent = 'Updating...';
+            
+            try {
+                const endpoint = syncEnabled ? 'disable' : 'enable';
+                const response = await fetch(`${API_BASE}/api/opms-sync/${endpoint}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    syncEnabled = data.data.enabled;
+                    updateSyncToggleButton();
+                    
+                    // Show notification
+                    const notification = document.createElement('div');
+                    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #059669; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; font-weight: 600;';
+                    notification.textContent = syncEnabled ? '🔓 Sync ENABLED' : '🔒 Sync DISABLED';
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.transition = 'opacity 0.3s';
+                        notification.style.opacity = '0';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 2000);
+                } else {
+                    alert('Failed to update sync state: ' + data.message);
+                    loadSyncState(); // Reload current state
+                }
+            } catch (error) {
+                console.error('Failed to toggle sync:', error);
+                alert('Failed to toggle sync: ' + error.message);
+                    loadSyncState(); // Reload current state
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function updateManualItemControls() {
+            const input = document.getElementById('itemCodeInput');
+            const btn = document.getElementById('syncItemBtn');
+            if (!input || !btn) return;
+            if (manualItemDashboardEnabled) {
+                input.disabled = false;
+                btn.disabled = false;
+                btn.title = '';
+                btn.style.opacity = '1';
+                input.style.opacity = '1';
+            } else {
+                input.disabled = true;
+                btn.disabled = true;
+                btn.title = 'Manual single-item sync is disabled by configuration';
+                btn.style.opacity = '0.6';
+                input.style.opacity = '0.6';
+            }
+        }
+
+        // Trigger item re-sync function
+        async function triggerItemResync(itemId, rowId, itemCode) {
+            if (!itemId || itemId === 'undefined') {
+                alert('No item ID available for this sync job');
+                return;
+            }
+
+            const button = document.getElementById(`sync-btn-${rowId}`);
+            const originalText = button.innerHTML;
+            
+            // Disable button and show loading state
+            button.disabled = true;
+            button.innerHTML = '⏳ Syncing...';
+            button.style.background = '#667eea';
+            button.style.cursor = 'not-allowed';
+            button.style.opacity = '0.6';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/opms-sync/trigger-item`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        itemId: parseInt(itemId),
+                        reason: 'Manual re-sync from dashboard',
+                        priority: 'HIGH',
+                        source: 'sync-dashboard'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show success state
+                    button.innerHTML = '✓ Queued';
+                    button.style.background = '#48bb78';
+                    
+                    // Show success notification
+                    const notification = document.createElement('div');
+                    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #48bb78; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; font-weight: 600;';
+                    notification.textContent = `✅ Item ${itemCode} queued for sync`;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.transition = 'opacity 0.3s';
+                        notification.style.opacity = '0';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 3000);
+
+                    // Refresh the dashboard after a short delay to show new status
+                    setTimeout(() => {
+                        refreshOpmsToNetSuite();
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || 'Failed to trigger sync');
+                }
+            } catch (error) {
+                console.error('Failed to trigger sync:', error);
+                
+                // Show error state
+                button.innerHTML = '❌ Failed';
+                button.style.background = '#f56565';
+                
+                // Show error notification
+                const notification = document.createElement('div');
+                notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #f56565; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; font-weight: 600;';
+                notification.textContent = `❌ Failed to queue sync: ${error.message}`;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.transition = 'opacity 0.3s';
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                }, 5000);
+
+                // Reset button after error
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = '#667eea';
+                    button.disabled = false;
+                    button.style.cursor = 'pointer';
+                    button.style.opacity = '1';
+                }, 3000);
+            }
+        }
+
+        // Sync individual item by code
+        async function syncItemByCode() {
+            const itemCodeInput = document.getElementById('itemCodeInput');
+            const syncButton = document.getElementById('syncItemBtn');
+            const itemCode = itemCodeInput.value.trim();
+
+            if (!itemCode) {
+                alert('Please enter an item code');
+                itemCodeInput.focus();
+                return;
+            }
+
+            // Validate item code format (basic validation)
+            if (!/^[0-9]{4}-[0-9]{4}$/.test(itemCode)) {
+                alert('Item code must be in format: 1234-5678');
+                itemCodeInput.focus();
+                return;
+            }
+
+            const originalText = syncButton.innerHTML;
+            
+            // Disable button and show loading state
+            syncButton.disabled = true;
+            syncButton.innerHTML = '⏳ Syncing...';
+            syncButton.style.background = '#667eea';
+            syncButton.style.cursor = 'not-allowed';
+            syncButton.style.opacity = '0.6';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/opms-sync/trigger-item-by-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        itemCode: itemCode,
+                        reason: 'Manual sync by code from dashboard',
+                        priority: 'HIGH',
+                        source: 'sync-dashboard'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show success state
+                    syncButton.innerHTML = '✓ Queued';
+                    syncButton.style.background = '#48bb78';
+                    
+                    // Clear input
+                    itemCodeInput.value = '';
+                    
+                    // Show success notification
+                    const notification = document.createElement('div');
+                    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #48bb78; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; font-weight: 600;';
+                    notification.textContent = `✅ Item ${itemCode} queued for sync (ID: ${data.data.itemId})`;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.transition = 'opacity 0.3s';
+                        notification.style.opacity = '0';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 3000);
+
+                    // Refresh the dashboard after a short delay to show new status
+                    setTimeout(() => {
+                        refreshOpmsToNetSuite();
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || 'Failed to trigger sync');
+                }
+            } catch (error) {
+                console.error('Failed to trigger sync by code:', error);
+                
+                // Show error state
+                syncButton.innerHTML = '❌ Failed';
+                syncButton.style.background = '#f56565';
+                
+                // Show error notification
+                const notification = document.createElement('div');
+                notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #f56565; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; font-weight: 600;';
+                notification.textContent = `❌ Failed to queue sync: ${error.message}`;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.transition = 'opacity 0.3s';
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                }, 5000);
+            }
+
+            // Reset button after delay
+            setTimeout(() => {
+                syncButton.innerHTML = originalText;
+                syncButton.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+                syncButton.disabled = false;
+                syncButton.style.cursor = 'pointer';
+                syncButton.style.opacity = '1';
+            }, 3000);
+        }
+
+        // Clear inactive syncs function
+        async function clearInactiveSyncs(forceAll) {
+            let confirmMessage;
+            if (forceAll) {
+                confirmMessage = '⚠️ FORCE CLEAR ALL ⚠️\n\nThis will delete ALL PENDING and FAILED sync jobs regardless of age.\n\nThis is useful for clearing stuck/dead sync items.\n\nAre you sure?';
+            } else {
+                confirmMessage = 'Are you sure you want to clear old PENDING and FAILED sync jobs?\n\nThis will delete inactive sync jobs older than 24 hours.';
+            }
+            
+            const confirmed = confirm(confirmMessage);
+            
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/sync-dashboard/clear-inactive-syncs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        maxAgeHours: 24,
+                        forceAll: forceAll
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show success notification
+                    const notification = document.createElement('div');
+                    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #48bb78; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; font-weight: 600;';
+                    notification.textContent = `✅ Cleared ${data.deletedCount} inactive sync jobs${forceAll ? ' (all ages)' : ''}`;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.transition = 'opacity 0.3s';
+                        notification.style.opacity = '0';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 3000);
+
+                    // Refresh the dashboard
+                    setTimeout(() => {
+                        refreshOpmsToNetSuite();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message || 'Failed to clear inactive syncs');
+                }
+            } catch (error) {
+                console.error('Failed to clear inactive syncs:', error);
+                
+                // Show error notification
+                const notification = document.createElement('div');
+                notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #f56565; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; font-weight: 600;';
+                notification.textContent = `❌ Failed to clear: ${error.message}`;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.transition = 'opacity 0.3s';
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>

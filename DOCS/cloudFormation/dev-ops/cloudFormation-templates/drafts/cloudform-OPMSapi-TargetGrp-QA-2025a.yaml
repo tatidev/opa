@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template
+
+Parameters:
+  AppName:
+    Description: The name of the application.
+    Type: String
+    Default: OPMS-API
+  ENV:
+    Description: The environment (eg. DEV, QA, PROD).
+    Type: String
+    Default: QA
+  VPCId:
+    Description: The VPC ID where the ALB and target group will be deployed.
+    Type: String
+    Default: vpc-0374245a0431efd1e
+
+Resources:
+  # Target Groups for each environment
+  TargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties: 
+      Name: !Join [ "-",["TG", !Ref AppName, !Ref ENV ]]
+      Port: 3000
+      Protocol: "HTTP"
+      VpcId: 
+        Ref: VPCId
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: "/api/health"
+      HealthCheckProtocol: "HTTP"
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+      Tags: 
+        - Key: "Name"
+          Value: !Join [ "-",["TG", !Ref AppName, !Ref ENV ]]
+
+Outputs:
+  TargetGroup:
+    Description: The ARN of the target group for the  environment.
+    Value: !Ref TargetGroup
+  

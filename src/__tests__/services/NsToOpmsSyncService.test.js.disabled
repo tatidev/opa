@@ -1,0 +1,323 @@
+'use strict';
+
+const NsToOpmsSyncService = require('../../services/NsToOpmsSyncService');
+
+// Mock dependencies
+jest.mock('../../utils/logger');
+jest.mock('../../models');
+jest.mock('../../services/netsuiteClient');
+jest.mock('../../models/ProductModel');
+jest.mock('../../models/ItemModel');
+
+// Mock Sequelize to avoid dependency issues in test environment
+jest.mock('sequelize', () => ({
+  Model: class MockModel {},
+  DataTypes: {
+    INTEGER: 'INTEGER',
+    STRING: 'STRING',
+    TEXT: 'TEXT',
+    DATE: 'DATE',
+    ENUM: jest.fn()
+  },
+  Op: {}
+}));
+
+describe('NsToOpmsSyncService', () => {
+  let syncService;
+  
+  beforeEach(() => {
+    syncService = new NsToOpmsSyncService();
+    jest.clearAllMocks();
+  });
+
+  describe('shouldSkipPricingSync', () => {
+    test('should skip items with Lisa Slayman flag set to true', () => {
+      const netsuiteItem = {
+        itemid: 'TEST-001',
+        custitemf3_lisa_item: true
+      };
+      
+      const result = syncService.shouldSkipPricingSync(netsuiteItem);
+      
+      expect(result.skip).toBe(true);
+      expect(result.reason).toContain('Lisa Slayman');
+      expect(result.itemId).toBe('TEST-001');
+    });
+    
+    test('should not skip items with Lisa Slayman flag set to false', () => {
+      const netsuiteItem = {
+        itemid: 'TEST-002',
+        custitemf3_lisa_item: false
+      };
+      
+      const result = syncService.shouldSkipPricingSync(netsuiteItem);
+      
+      expect(result.skip).toBe(false);
+    });
+    
+    test('should not skip items without Lisa Slayman flag', () => {
+      const netsuiteItem = {
+        itemid: 'TEST-003'
+      };
+      
+      const result = syncService.shouldSkipPricingSync(netsuiteItem);
+      
+      expect(result.skip).toBe(false);
+    });
+  });
+
+  describe('extractPricingData', () => {
+    test('should extract all pricing fields correctly', () => {
+      const netsuiteItem = {
+        price_1_: '25.99',
+        itemPriceLine2_itemPrice: '45.50',
+        cost: '15.75',
+        custitem_f3_rollprice: '40.00'
+      };
+      
+      const result = syncService.extractPricingData(netsuiteItem);
+      
+      expect(result).toEqual({
+        p_res_cut: 25.99,
+        p_hosp_roll: 45.50,
+        cost_cut: 15.75,
+        cost_roll: 40.00
+      });
+    });
+    
+    test('should handle null and undefined values', () => {
+      const netsuiteItem = {
+        price_1_: null,
+        itemPriceLine2_itemPrice: undefined,
+        cost: '15.75',
+        custitem_f3_rollprice: ''
+      };
+      
+      const result = syncService.extractPricingData(netsuiteItem);
+      
+      expect(result).toEqual({
+        cost_cut: 15.75
+      });
+    });
+    
+    test('should handle negative values by excluding them', () => {
+      const netsuiteItem = {
+        price_1_: '-25.99',
+        cost: '15.75'
+      };
+      
+      const result = syncService.extractPricingData(netsuiteItem);
+      
+      expect(result).toEqual({
+        cost_cut: 15.75
+      });
+    });
+    
+    test('should handle non-numeric values by excluding them', () => {
+      const netsuiteItem = {
+        price_1_: 'invalid',
+        cost: '15.75'
+      };
+      
+      const result = syncService.extractPricingData(netsuiteItem);
+      
+      expect(result).toEqual({
+        cost_cut: 15.75
+      });
+    });
+  });
+
+  describe('validatePricingData', () => {
+    test('should validate correct pricing data', () => {
+      const pricingData = {
+        p_res_cut: 25.99,
+        p_hosp_roll: 45.50,
+        cost_cut: 15.75,
+        cost_roll: 40.00
+      };
+      
+      const result = syncService.validatePricingData(pricingData, {});
+      
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+    
+    test('should reject negative prices', () => {
+      const pricingData = {
+        p_res_cut: -25.99,
+        cost_cut: 15.75
+      };
+      
+      const result = syncService.validatePricingData(pricingData, {});
+      
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('p_res_cut: Must be non-negative (got: -25.99)');
+    });
+    
+    test('should reject non-numeric prices', () => {
+      const pricingData = {
+        p_res_cut: 'invalid',
+        cost_cut: 15.75
+      };
+      
+      const result = syncService.validatePricingData(pricingData, {});
+      
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('p_res_cut: Must be a valid number (got: invalid)');
+    });
+    
+    test('should warn when selling price is not higher than cost', () => {
+      const pricingData = {
+        p_res_cut: 15.00,
+        cost_cut: 20.00
+      };
+      
+      const result = syncService.validatePricingData(pricingData, {});
+      
+      expect(result.isValid).toBe(true);
+      expect(result.warnings).toContain('Warning: Selling price (p_res_cut) is not higher than cost (cost_cut)');
+    });
+    
+    test('should reject prices outside reasonable range', () => {
+      const pricingData = {
+        p_res_cut: 0.005, // Too small
+        cost_cut: 1000000 // Too large
+      };
+      
+      const result = syncService.validatePricingData(pricingData, {});
+      
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('p_res_cut: Price out of reasonable range (got: 0.005)');
+      expect(result.errors).toContain('cost_cut: Price out of reasonable range (got: 1000000)');
+    });
+  });
+
+  describe('syncSingleItemPricing', () => {
+    test('should skip items with Lisa Slayman flag', async () => {
+      const netsuiteItem = {
+        itemid: 'TEST-001',
+        internalid: '123',
+        custitemf3_lisa_item: true
+      };
+      
+      const result = await syncService.syncSingleItemPricing(netsuiteItem);
+      
+      expect(result.skipped).toBe(true);
+      expect(result.reason).toContain('Lisa Slayman');
+    });
+    
+    test('should throw error when OPMS item not found', async () => {
+      const netsuiteItem = {
+        itemid: 'NONEXISTENT',
+        internalid: '123',
+        custitemf3_lisa_item: false,
+        price_1_: '25.99'
+      };
+      
+      // Mock findOpmsItemByNetSuiteId to return null
+      syncService.findOpmsItemByNetSuiteId = jest.fn().mockResolvedValue(null);
+      
+      await expect(syncService.syncSingleItemPricing(netsuiteItem))
+        .rejects.toThrow('OPMS item not found for NetSuite item: NONEXISTENT');
+    });
+    
+    test('should throw error for invalid pricing data', async () => {
+      const netsuiteItem = {
+        itemid: 'TEST-001',
+        internalid: '123',
+        custitemf3_lisa_item: false,
+        price_1_: 'invalid'
+      };
+      
+      const opmsItem = {
+        id: 1,
+        product_id: 100,
+        product_type: 'R'
+      };
+      
+      syncService.findOpmsItemByNetSuiteId = jest.fn().mockResolvedValue(opmsItem);
+      
+      await expect(syncService.syncSingleItemPricing(netsuiteItem))
+        .rejects.toThrow('Invalid pricing data');
+    });
+  });
+
+  describe('Integration Tests', () => {
+    test('should process valid pricing update end-to-end', async () => {
+      const netsuiteItem = {
+        itemid: 'TEST-001',
+        internalid: '123',
+        custitemf3_lisa_item: false,
+        price_1_: '25.99',
+        cost: '15.75'
+      };
+      
+      const opmsItem = {
+        id: 1,
+        product_id: 100,
+        product_type: 'R'
+      };
+      
+      const updateResult = {
+        success: true,
+        priceUpdate: { updated: true },
+        costUpdate: { updated: true }
+      };
+      
+      // Mock all dependencies
+      syncService.findOpmsItemByNetSuiteId = jest.fn().mockResolvedValue(opmsItem);
+      syncService.updateItemPricingAtomic = jest.fn().mockResolvedValue(updateResult);
+      syncService.logSyncItem = jest.fn().mockResolvedValue();
+      
+      const result = await syncService.syncSingleItemPricing(netsuiteItem);
+      
+      expect(result.success).toBe(true);
+      expect(result.itemId).toBe('TEST-001');
+      expect(result.opmsItemId).toBe(1);
+      expect(syncService.findOpmsItemByNetSuiteId).toHaveBeenCalledWith('TEST-001');
+      expect(syncService.updateItemPricingAtomic).toHaveBeenCalledWith(
+        opmsItem,
+        { p_res_cut: 25.99, cost_cut: 15.75 }
+      );
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle database connection errors gracefully', async () => {
+      const netsuiteItem = {
+        itemid: 'TEST-001',
+        internalid: '123',
+        custitemf3_lisa_item: false,
+        price_1_: '25.99'
+      };
+      
+      syncService.findOpmsItemByNetSuiteId = jest.fn()
+        .mockRejectedValue(new Error('Database connection failed'));
+      
+      await expect(syncService.syncSingleItemPricing(netsuiteItem))
+        .rejects.toThrow('Database connection failed');
+    });
+    
+    test('should handle transaction rollback on update failure', async () => {
+      const netsuiteItem = {
+        itemid: 'TEST-001',
+        internalid: '123',
+        custitemf3_lisa_item: false,
+        price_1_: '25.99'
+      };
+      
+      const opmsItem = {
+        id: 1,
+        product_id: 100,
+        product_type: 'R'
+      };
+      
+      syncService.findOpmsItemByNetSuiteId = jest.fn().mockResolvedValue(opmsItem);
+      syncService.updateItemPricingAtomic = jest.fn()
+        .mockRejectedValue(new Error('Transaction failed'));
+      
+      await expect(syncService.syncSingleItemPricing(netsuiteItem))
+        .rejects.toThrow('Transaction failed');
+    });
+  });
+});

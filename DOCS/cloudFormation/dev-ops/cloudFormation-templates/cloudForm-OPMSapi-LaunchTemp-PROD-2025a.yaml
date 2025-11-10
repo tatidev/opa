@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template to create an Application Load Balancer (ALB) with an Auto Scaling Group (ASG) using an existing launch template.
+
+Parameters:
+  AppName:
+    Description: The name of the application.
+    Type: String
+    Default: OPMS-API
+  ENV:
+    Description: The environment (eg. DEV, STAGE, PROD).
+    Type: String
+    Default: PROD
+  ec2Role:
+    Description: The IAM role for the EC2 instances.
+    Type: String
+    Default: arn:aws:iam::992382576482:instance-profile/opms-ec2
+  SecurityGroupIdALBNodes:
+    Description: The security group ID typical node instances.
+    Type: String
+    Default: sg-0e788bb40ae6dc9e6
+  SecurityGroupIdRestricted:
+    Description: The security group ID for restriced access.
+    Type: String
+    Default: sg-0fba45b2463b776df
+  InstanceType:
+    Description: The EC2 instance type for the ASG.
+    Type: String
+    Default: t4g.xlarge
+  KeyPairName:
+    Description: The name of the EC2 key pair to enable SSH access to the instances.
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: opuzen_dev_opms
+  UserDataS3Bucket:
+    Description: The S3 bucket where the user data script is stored.
+    Type: String
+    Default: opuzen-scripts
+  UserDataS3KeyNodeJs:
+    Description: The S3 key (path) to the user data script.
+    Type: String
+    Default: user-data/LaunchTemplateUserData-opms-api-InstallNodeJS-V1.sh
+  UserDataS3KeyDeployApp:
+    Description: The S3 key (path) to the user data script.
+    Type: String
+    Default: user-data/LaunchTemplateUserData-opms-api-DeployApp-V1.sh
+  DbHost:
+    Description: The hostname of the database.
+    Type: String
+    Default: opuzen-aurora-mysql8-cluster.cluster-c7886s6kkcmk.us-west-1.rds.amazonaws.com
+  SecretArnRDS:
+    Description: The RDS secret ID.
+    Type: String
+    Default: arn:aws:secretsmanager:us-west-1:992382576482:secret:rds!cluster-2cc47963-bf79-4426-8b61-6aac4f194a15-BS8pVs
+  SecretArnApp:
+    Description: The APP secret ID.
+    Type: String
+    Default: arn:aws:secretsmanager:us-west-1:992382576482:secret:Opuzen-API-Related-QDmGDq
+
+Resources:
+  
+  LaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateData:
+        ImageId: ami-0a144a71f27f35901
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyPairName
+        IamInstanceProfile:
+          Arn: !Ref ec2Role
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            AssociatePublicIpAddress: true
+            Groups:
+              - !Ref SecurityGroupIdRestricted
+              - !Ref SecurityGroupIdALBNodes
+        UserData:
+          Fn::Base64:
+            Fn::Sub: |
+              #!/bin/bash
+              #------------------------------------------------------------
+              # Install AWS CLI needed for reading user data script from S3
+              #------------------------------------------------------------
+              apt-get update -y
+              apt-get install -y unzip curl
+              ARCH=$(uname -m)
+              if [ "$ARCH" == "aarch64" ]; then
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+              else
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              fi
+              unzip awscliv2.zip
+              ./aws/install
+              #------------------------------------------------
+              # Get the user data script(s) from S3 and execute
+              #------------------------------------------------
+              aws s3 cp s3://${UserDataS3Bucket}/${UserDataS3KeyNodeJs} /tmp/user-data-nodejs.sh
+              chmod +x /tmp/user-data-nodejs.sh
+              # The params are recived in the script as $1, $2, $3,and $4
+              /tmp/user-data-nodejs.sh ${ENV} ${AppName} ${SecretArnRDS} ${DbHost}    
+
+              aws s3 cp s3://${UserDataS3Bucket}/${UserDataS3KeyDeployApp} /tmp/user-data-deployapp.sh
+              chmod +x /tmp/user-data-deployapp.sh
+              # The params are recived in the script as $1, $2, $3,and $4
+              /tmp/user-data-deployapp.sh ${ENV} ${AppName} ${SecretArnApp} ${DbHost}
+                  
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Ref AppName
+              - Key: Environment
+                Value: !Ref ENV
+      LaunchTemplateName: !Join [ "-", ["LT", !Ref AppName, !Ref ENV ]]
+
+Outputs:
+  LaunchTemplateId:
+    Description: The ID of the launch template.
+    Value: !Ref LaunchTemplate
+  LaunchTemplateName:
+    Description: The name of the launch template.
+    Value: !Ref LaunchTemplate
+  LaunchTemplateVersion:
+    Description: The version of the launch template.
+    Value: !GetAtt LaunchTemplate.LatestVersionNumber
+  DefaultVersionNumber:
+    Description: The default version number of the launch template.
+    Value: !GetAtt LaunchTemplate.DefaultVersionNumber
+  
+

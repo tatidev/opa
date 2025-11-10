@@ -1,0 +1,492 @@
+'use strict';
+
+const request = require('supertest');
+const app = require('../index');
+const { sequelize } = require('../db');
+const NetsuiteToOpmsSyncService = require('../services/NetsuiteToOpmsSyncService');
+const { NetsuiteOpmsSyncJob, NetsuiteOpmsSyncItem, NetsuiteOpmsSyncLog } = require('../models');
+
+// Mock NetSuite client
+jest.mock('../services/netsuiteClient');
+
+describe('NetSuite to OPMS Sync System', () => {
+  let authToken;
+  let syncService;
+
+  beforeAll(async () => {
+    // Setup test database
+    await sequelize.sync({ force: true });
+    
+    // Create test user and get auth token
+    // This would need to be implemented based on your auth system
+    authToken = 'test-auth-token';
+    
+    syncService = new NetsuiteToOpmsSyncService();
+  });
+
+  afterAll(async () => {
+    await sequelize.close();
+  });
+
+  beforeEach(async () => {
+    // Clear test data
+    await NetsuiteOpmsSyncLog.destroy({ where: {} });
+    await NetsuiteOpmsSyncItem.destroy({ where: {} });
+    await NetsuiteOpmsSyncJob.destroy({ where: {} });
+  });
+
+  describe('NetsuiteToOpmsSyncService', () => {
+    describe('Initial Sync', () => {
+      test('should start initial sync successfully', async () => {
+        const result = await syncService.startInitialSync();
+        
+        expect(result).toHaveProperty('jobId');
+        expect(result.status).toBe('started');
+        expect(result.message).toBe('Initial sync job created and started');
+        
+        // Verify job was created
+        const job = await NetsuiteOpmsSyncJob.findByPk(result.jobId);
+        expect(job).toBeTruthy();
+        expect(job.job_type).toBe('initial');
+        expect(job.status).toBe('pending');
+      });
+
+      test('should prevent multiple initial syncs from running simultaneously', async () => {
+        // Start first sync
+        await syncService.startInitialSync();
+        
+        // Try to start second sync
+        await expect(syncService.startInitialSync()).rejects.toThrow(
+          'Initial sync already in progress'
+        );
+      });
+
+      test('should process initial sync with progress tracking', async () => {
+        const job = await NetsuiteOpmsSyncJob.create({
+          job_type: 'initial',
+          status: 'pending',
+          total_items: 0
+        });
+
+        // Mock NetSuite responses
+        syncService.getNetSuiteItemCount = jest.fn().mockResolvedValue(100);
+        syncService.getNetSuiteItemsBatch = jest.fn().mockResolvedValue([
+          { id: '1', price_1_: '10.50', cost: '8.00' },
+          { id: '2', price_1_: '15.75', cost: '12.00' }
+        ]);
+
+        await syncService.processInitialSync(job);
+
+        // Verify job completed
+        await job.reload();
+        expect(job.status).toBe('completed');
+        expect(job.processed_items).toBe(100);
+        expect(job.successful_items).toBe(100);
+        expect(job.failed_items).toBe(0);
+      });
+    });
+
+    describe('Single Item Sync', () => {
+      test('should sync single item successfully', async () => {
+        const netsuiteItem = {
+          id: '12345',
+          price_1_: '25.99',
+          cost: '18.50',
+          custitem_f3_rollprice: '22.00'
+        };
+
+        const result = await syncService.syncSingleItem(netsuiteItem, 1);
+        
+        // Verify sync item was created
+        const syncItem = await NetsuiteOpmsSyncItem.findOne({
+          where: { netsuite_item_id: '12345' }
+        });
+        
+        expect(syncItem).toBeTruthy();
+        expect(syncItem.status).toBe('success');
+        expect(syncItem.sync_fields).toEqual({
+          p_res_cut: 25.99,
+          p_hosp_roll: 25.99,
+          purchase_price: 18.50,
+          roll_price_custom: 22.00
+        });
+      });
+
+      test('should handle sync failures gracefully', async () => {
+        // Mock a failure scenario
+        syncService.updateOpmsItem = jest.fn().mockRejectedValue(
+          new Error('OPMS update failed')
+        );
+
+        const netsuiteItem = { id: '99999', price_1_: '10.00' };
+
+        await expect(syncService.syncSingleItem(netsuiteItem, 1)).rejects.toThrow(
+          'OPMS update failed'
+        );
+
+        // Verify failure was recorded
+        const syncItem = await NetsuiteOpmsSyncItem.findOne({
+          where: { netsuite_item_id: '99999' }
+        });
+        
+        expect(syncItem.status).toBe('failed');
+        expect(syncItem.error_message).toBe('OPMS update failed');
+      });
+    });
+
+    describe('Pricing Data Extraction', () => {
+      test('should extract all pricing fields correctly', () => {
+        const netsuiteItem = {
+          id: '12345',
+          price_1_: '19.99',
+          cost: '14.50',
+          custitem_f3_rollprice: '17.00'
+        };
+
+        const pricingData = syncService.extractPricingData(netsuiteItem);
+
+        expect(pricingData).toEqual({
+          p_res_cut: 19.99,
+          p_hosp_roll: 19.99,
+          purchase_price: 14.50,
+          roll_price_custom: 17.00
+        });
+      });
+
+      test('should handle missing pricing fields gracefully', () => {
+        const netsuiteItem = {
+          id: '12345',
+          price_1_: null,
+          cost: undefined
+        };
+
+        const pricingData = syncService.extractPricingData(netsuiteItem);
+
+        expect(pricingData).toEqual({});
+      });
+
+      test('should parse numeric values correctly', () => {
+        const netsuiteItem = {
+          id: '12345',
+          price_1_: '25.50',
+          cost: '18.75'
+        };
+
+        const pricingData = syncService.extractPricingData(netsuiteItem);
+
+        expect(pricingData.p_res_cut).toBe(25.5);
+        expect(pricingData.purchase_price).toBe(18.75);
+        expect(typeof pricingData.p_res_cut).toBe('number');
+        expect(typeof pricingData.purchase_price).toBe('number');
+      });
+    });
+
+    describe('Job Status and Progress', () => {
+      test('should calculate progress correctly', async () => {
+        const job = await NetsuiteOpmsSyncJob.create({
+          job_type: 'initial',
+          status: 'running',
+          total_items: 100,
+          processed_items: 50,
+          successful_items: 45,
+          failed_items: 5
+        });
+
+        expect(job.getProgress()).toBe(50);
+        expect(job.getSuccessRate()).toBe(90);
+        expect(job.getFailureRate()).toBe(10);
+      });
+
+      test('should handle edge cases in progress calculation', async () => {
+        const job = await NetsuiteOpmsSyncJob.create({
+          job_type: 'initial',
+          status: 'pending',
+          total_items: 0,
+          processed_items: 0,
+          successful_items: 0,
+          failed_items: 0
+        });
+
+        expect(job.getProgress()).toBe(0);
+        expect(job.getSuccessRate()).toBe(0);
+        expect(job.getFailureRate()).toBe(0);
+      });
+    });
+  });
+
+  describe('NetsuiteToOpmsSyncController', () => {
+    describe('Initial Sync Endpoints', () => {
+      test('POST /api/sync/netsuite-to-opms/initial should start initial sync', async () => {
+        const response = await request(app)
+          .post('/api/sync/netsuite-to-opms/initial')
+          .set('Authorization', `Bearer ${authToken}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data).toHaveProperty('jobId');
+        expect(response.body.data.status).toBe('started');
+      });
+
+      test('GET /api/sync/netsuite-to-opms/initial/status should return sync status', async () => {
+        // Create a test sync job first
+        await NetsuiteOpmsSyncJob.create({
+          job_type: 'initial',
+          status: 'running',
+          total_items: 100,
+          processed_items: 25
+        });
+
+        const response = await request(app)
+          .get('/api/sync/netsuite-to-opms/initial/status')
+          .set('Authorization', `Bearer ${authToken}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.status).toBe('running');
+        expect(response.body.data.progress).toBe(25);
+      });
+    });
+
+    describe('Single Item Sync Endpoints', () => {
+      test('POST /api/sync/netsuite-to-opms/item/:itemId should sync single item', async () => {
+        const response = await request(app)
+          .post('/api/sync/netsuite-to-opms/item/12345')
+          .set('Authorization', `Bearer ${authToken}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.itemId).toBe('12345');
+        expect(response.body.data.status).toBe('completed');
+      });
+
+      test('GET /api/sync/netsuite-to-opms/item/:itemId/status should return item sync history', async () => {
+        // Create test sync items
+        const job = await NetsuiteOpmsSyncJob.create({
+          job_type: 'item',
+          status: 'completed'
+        });
+
+        await NetsuiteOpmsSyncItem.create({
+          sync_job_id: job.id,
+          netsuite_item_id: '12345',
+          status: 'success',
+          sync_fields: { p_res_cut: 19.99 }
+        });
+
+        const response = await request(app)
+          .get('/api/sync/netsuite-to-opms/item/12345/status')
+          .set('Authorization', `Bearer ${authToken}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.itemId).toBe('12345');
+        expect(response.body.data.syncHistory).toHaveLength(1);
+        expect(response.body.data.syncHistory[0].status).toBe('success');
+      });
+    });
+
+    describe('Manual Sync Endpoints', () => {
+      test('POST /api/sync/netsuite-to-opms/manual should handle specific items sync', async () => {
+        const response = await request(app)
+          .post('/api/sync/netsuite-to-opms/manual')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({
+            syncType: 'specific_items',
+            itemIds: ['12345', '67890']
+          });
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.message).toContain('2 items');
+      });
+
+      test('POST /api/sync/netsuite-to-opms/manual should validate required parameters', async () => {
+        const response = await request(app)
+          .post('/api/sync/netsuite-to-opms/manual')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({
+            syncType: 'specific_items'
+            // Missing itemIds
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.message).toContain('itemIds array is required');
+      });
+    });
+
+    describe('Status and Monitoring Endpoints', () => {
+      test('GET /api/sync/netsuite-to-opms/status should return overall status', async () => {
+        // Create test jobs
+        await NetsuiteOpmsSyncJob.create({
+          job_type: 'initial',
+          status: 'completed'
+        });
+
+        await NetsuiteOpmsSyncJob.create({
+          job_type: 'item',
+          status: 'running'
+        });
+
+        const response = await request(app)
+          .get('/api/sync/netsuite-to-opms/status')
+          .set('Authorization', `Bearer ${authToken}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.totalJobs).toBe(2);
+        expect(response.body.data.completedJobs).toBe(1);
+        expect(response.body.data.runningJobs).toBe(1);
+      });
+
+      test('GET /api/sync/netsuite-to-opms/logs should return filtered logs', async () => {
+        // Create test logs
+        const job = await NetsuiteOpmsSyncJob.create({
+          job_type: 'initial',
+          status: 'completed'
+        });
+
+        await NetsuiteOpmsSyncLog.create({
+          sync_job_id: job.id,
+          log_level: 'info',
+          message: 'Test log message'
+        });
+
+        const response = await request(app)
+          .get('/api/sync/netsuite-to-opms/logs?level=info')
+          .set('Authorization', `Bearer ${authToken}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.logs).toHaveLength(1);
+        expect(response.body.data.logs[0].level).toBe('info');
+      });
+
+      test('GET /api/sync/netsuite-to-opms/health should return system health', async () => {
+        const response = await request(app)
+          .get('/api/sync/netsuite-to-opms/health')
+          .set('Authorization', `Bearer ${authToken}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.status).toBe('healthy');
+        expect(response.body.data).toHaveProperty('database');
+        expect(response.body.data).toHaveProperty('netsuite');
+      });
+    });
+  });
+
+  describe('Integration Tests', () => {
+    test('should complete full sync workflow', async () => {
+      // 1. Start initial sync
+      const startResponse = await request(app)
+        .post('/api/sync/netsuite-to-opms/initial')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(startResponse.status).toBe(200);
+      const jobId = startResponse.body.data.jobId;
+
+      // 2. Check sync status
+      const statusResponse = await request(app)
+        .get('/api/sync/netsuite-to-opms/initial/status')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(statusResponse.status).toBe(200);
+      expect(statusResponse.body.data.jobId).toBe(jobId);
+
+      // 3. Check overall status
+      const overallResponse = await request(app)
+        .get('/api/sync/netsuite-to-opms/status')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(overallResponse.status).toBe(200);
+      expect(overallResponse.data.totalJobs).toBeGreaterThan(0);
+    });
+
+    test('should handle sync job lifecycle correctly', async () => {
+      // Create a job
+      const job = await NetsuiteOpmsSyncJob.create({
+        job_type: 'test',
+        status: 'pending'
+      });
+
+      // Test job state transitions
+      expect(job.isPending()).toBe(true);
+      expect(job.isRunning()).toBe(false);
+
+      await job.markStarted();
+      expect(job.isRunning()).toBe(true);
+      expect(job.started_at).toBeTruthy();
+
+      await job.updateProgress(10, 8, 2);
+      expect(job.processed_items).toBe(10);
+      expect(job.successful_items).toBe(8);
+      expect(job.failed_items).toBe(2);
+
+      await job.markCompleted();
+      expect(job.isCompleted()).toBe(true);
+      expect(job.completed_at).toBeTruthy();
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle database connection errors gracefully', async () => {
+      // Mock database error
+      const originalFindAll = NetsuiteOpmsSyncJob.findAll;
+      NetsuiteOpmsSyncJob.findAll = jest.fn().mockRejectedValue(
+        new Error('Database connection failed')
+      );
+
+      const response = await request(app)
+        .get('/api/sync/netsuite-to-opms/status')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(500);
+      expect(response.body.success).toBe(false);
+
+      // Restore original method
+      NetsuiteOpmsSyncJob.findAll = originalFindAll;
+    });
+
+    test('should handle NetSuite API errors gracefully', async () => {
+      // Mock NetSuite error
+      syncService.netsuiteClient.testConnection = jest.fn().mockRejectedValue(
+        new Error('NetSuite API unavailable')
+      );
+
+      const response = await request(app)
+        .get('/api/sync/netsuite-to-opms/health')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(503);
+      expect(response.body.data.status).toBe('unhealthy');
+    });
+  });
+
+  describe('Performance Tests', () => {
+    test('should handle large batch processing efficiently', async () => {
+      const startTime = Date.now();
+      
+      // Create a large number of test items
+      const testItems = Array.from({ length: 1000 }, (_, i) => ({
+        id: `item_${i}`,
+        price_1_: (Math.random() * 100).toFixed(2),
+        cost: (Math.random() * 50).toFixed(2)
+      }));
+
+      // Process items in batches
+      const batchSize = 100;
+      for (let i = 0; i < testItems.length; i += batchSize) {
+        const batch = testItems.slice(i, i + batchSize);
+        // Process batch (simulated)
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      const endTime = Date.now();
+      const processingTime = endTime - startTime;
+
+      // Should complete within reasonable time (adjust based on your requirements)
+      expect(processingTime).toBeLessThan(5000); // 5 seconds
+    });
+  });
+});

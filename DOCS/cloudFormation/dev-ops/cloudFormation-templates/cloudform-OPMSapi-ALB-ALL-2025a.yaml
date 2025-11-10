@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template to create an Application Load Balancer (ALB) with an Auto Scaling Group (ASG) using an existing launch template.
+
+Parameters:
+  AppName:
+    Description: The name of the application.
+    Type: String
+    Default: OPMS-API
+  ENV:
+    Description: The environment (eg. DEV, QA, PROD).
+    Type: String
+    Default: ALL
+  VPCId:
+    Description: The VPC ID where the ALB and target group will be deployed.
+    Type: String
+    Default: vpc-0374245a0431efd1e
+  Subnet1:
+    Description: The first subnet ID where the ALB will be deployed.
+    Type: String
+    Default: subnet-0f6ff18ee5a9c7b29
+  Subnet2:
+    Description: The second subnet ID where the ALB will be deployed.
+    Type: String
+    Default: subnet-07ebdc23cab656e21
+  SecurityGroupIdALB:
+    Description: The security group ID for ALB public access.
+    Type: String
+    Default: sg-0e817112760176796
+  SecurityGroupIdBetweenALBAndInstances:
+    Description: The security group between ALB and its node instances.
+    Type: String
+    Default: sg-0e44797047e65559f
+
+Resources:
+  
+  ALB:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties: 
+      Name: !Join [ "-",["ALB", !Ref AppName, !Ref ENV]]
+      Scheme: "internet-facing"
+      Subnets: 
+        - Ref: Subnet1
+        - Ref: Subnet2
+      SecurityGroups: 
+        - Ref: SecurityGroupIdALB
+        - !Ref SecurityGroupIdBetweenALBAndInstances
+      LoadBalancerAttributes: 
+        - Key: "deletion_protection.enabled"
+          Value: "false"
+      Tags: 
+        - Key: "Name"
+          Value: !Join [ "-",["ALB", !Ref AppName, !Ref ENV ]]
+
+Outputs:
+  ALBArn:
+    Description: The ARN of the ALB
+    Value: 
+      Ref: ALB
+  ALBDNSName:
+    Description: The DNS name of the ALB
+    Value: 
+      Fn::GetAtt: 
+        - ALB
+        - DNSName
+
